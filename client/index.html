@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CssWorld</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #0a0a0f;
+    color: #c8c8d4;
+    font-family: 'Courier New', monospace;
+    overflow: hidden;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Top bar */
+  #topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 16px;
+    background: #12121a;
+    border-bottom: 1px solid #2a2a3a;
+    flex-shrink: 0;
+    z-index: 10;
+  }
+  #topbar h1 {
+    font-size: 16px;
+    color: #9f9fef;
+    letter-spacing: 2px;
+  }
+  #world-info {
+    display: flex;
+    gap: 16px;
+    font-size: 12px;
+    color: #8888aa;
+  }
+  #world-info span { white-space: nowrap; }
+  .info-val { color: #c8c8f0; }
+
+  /* Main layout */
+  #main {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  /* Canvas area */
+  #canvas-wrap {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    cursor: grab;
+  }
+  #canvas-wrap:active { cursor: grabbing; }
+  canvas {
+    position: absolute;
+    top: 0; left: 0;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+  }
+
+  /* Sidebar */
+  #sidebar {
+    width: 280px;
+    background: #12121a;
+    border-left: 1px solid #2a2a3a;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    overflow: hidden;
+  }
+
+  .sidebar-section {
+    padding: 10px 12px;
+    border-bottom: 1px solid #1e1e2e;
+  }
+  .sidebar-section h3 {
+    font-size: 11px;
+    text-transform: uppercase;
+    color: #6666aa;
+    letter-spacing: 1px;
+    margin-bottom: 6px;
+  }
+
+  /* Entity list */
+  #entity-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px 12px;
+  }
+  .entity-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 6px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: background 0.15s;
+  }
+  .entity-row:hover { background: #1a1a2e; }
+  .entity-row.selected { background: #222244; }
+  .entity-icon {
+    width: 20px; height: 20px;
+    image-rendering: pixelated;
+    border-radius: 2px;
+  }
+  .entity-name { flex: 1; color: #c8c8e0; }
+  .entity-state {
+    font-size: 10px;
+    padding: 1px 5px;
+    border-radius: 3px;
+    background: #1e1e30;
+    color: #8888bb;
+  }
+  .entity-state.moving { color: #66cc88; background: #1a2e1e; }
+  .entity-state.gathering { color: #ccaa44; background: #2e2a1a; }
+  .entity-state.sleeping { color: #6688cc; background: #1a1e2e; }
+  .entity-state.idle { color: #888899; }
+
+  /* Event log */
+  #event-log {
+    height: 160px;
+    overflow-y: auto;
+    padding: 8px 12px;
+    font-size: 11px;
+    line-height: 1.6;
+    border-top: 1px solid #1e1e2e;
+  }
+  .event-entry {
+    color: #7777aa;
+    padding: 1px 0;
+  }
+  .event-entry .tick-num { color: #555577; }
+  .event-entry.spawn { color: #66ccaa; }
+  .event-entry.gather { color: #ccaa55; }
+  .event-entry.build { color: #aa88cc; }
+  .event-entry.weather { color: #6699cc; }
+  .event-entry.discovery { color: #cc6688; }
+  .event-entry.move { color: #668877; }
+
+  /* Minimap */
+  #minimap-wrap {
+    padding: 8px 12px;
+    border-bottom: 1px solid #1e1e2e;
+    display: flex;
+    justify-content: center;
+  }
+  #minimap {
+    image-rendering: pixelated;
+    border: 1px solid #2a2a3a;
+    cursor: pointer;
+  }
+
+  /* Tooltip */
+  #tooltip {
+    position: fixed;
+    background: #1a1a28;
+    border: 1px solid #3a3a5a;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 11px;
+    pointer-events: none;
+    display: none;
+    z-index: 100;
+    max-width: 220px;
+    line-height: 1.5;
+  }
+  #tooltip .tt-title { color: #c8c8f0; font-weight: bold; margin-bottom: 2px; }
+  #tooltip .tt-row { color: #8888bb; }
+  #tooltip .tt-val { color: #aaaadd; }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: #0a0a12; }
+  ::-webkit-scrollbar-thumb { background: #2a2a44; border-radius: 3px; }
+
+  /* Weather overlay */
+  #weather-overlay {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    z-index: 5;
+    transition: opacity 0.5s;
+  }
+
+  /* Connection status */
+  #conn-status {
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 10px;
+  }
+  #conn-status.connected { color: #44aa66; background: #1a2e1e; }
+  #conn-status.disconnected { color: #aa4444; background: #2e1a1a; }
+</style>
+</head>
+<body>
+
+<div id="topbar">
+  <h1>CSS WORLD</h1>
+  <div id="world-info">
+    <span>Tick <span class="info-val" id="info-tick">0</span></span>
+    <span>Epoch <span class="info-val" id="info-epoch">0</span></span>
+    <span id="info-season" class="info-val">spring</span>
+    <span id="info-time" class="info-val">day</span>
+    <span id="info-weather" class="info-val">clear</span>
+    <span>Pop <span class="info-val" id="info-pop">0</span></span>
+    <span id="conn-status" class="disconnected">disconnected</span>
+  </div>
+</div>
+
+<div id="main">
+  <div id="canvas-wrap">
+    <canvas id="world-canvas"></canvas>
+    <canvas id="weather-overlay"></canvas>
+  </div>
+  <div id="sidebar">
+    <div id="minimap-wrap">
+      <canvas id="minimap" width="128" height="128"></canvas>
+    </div>
+    <div class="sidebar-section">
+      <h3>Entities</h3>
+    </div>
+    <div id="entity-list"></div>
+    <div class="sidebar-section">
+      <h3>Event Log</h3>
+    </div>
+    <div id="event-log"></div>
+  </div>
+</div>
+
+<div id="tooltip">
+  <div class="tt-title"></div>
+  <div class="tt-body"></div>
+</div>
+
+<script>
+// ===================== CONFIG =====================
+const TILE_SIZE = 32;
+const GRID = 32;
+const WORLD_PX = GRID * TILE_SIZE;
+
+// ===================== STATE =====================
+let state = null;
+let sprites = {};
+let spritesLoaded = false;
+let camera = { x: 0, y: 0, zoom: 1 };
+let selectedEntityId = null;
+let dragging = false;
+let dragStart = { x: 0, y: 0 };
+let camStart = { x: 0, y: 0 };
+
+// ===================== CANVAS =====================
+const canvas = document.getElementById('world-canvas');
+const ctx = canvas.getContext('2d');
+const minimapCanvas = document.getElementById('minimap');
+const minimapCtx = minimapCanvas.getContext('2d');
+const weatherCanvas = document.getElementById('weather-overlay');
+const weatherCtx = weatherCanvas.getContext('2d');
+
+// ===================== SPRITES =====================
+const TERRAIN_COLORS = {
+  grass: '#3a7a3a',
+  water: '#2244aa',
+  sand: '#c4a84a',
+  rock: '#666677',
+  forest: '#1a5a2a',
+  mountain: '#555566',
+  swamp: '#3a5a3a',
+};
+
+const ENTITY_COLORS = {
+  wanderer: '#66ccff',
+  builder: '#ffaa44',
+  gatherer: '#44dd66',
+  guardian: '#ff6688',
+};
+
+const STRUCTURE_COLORS = {
+  campfire: '#ff8844',
+  tower: '#9988cc',
+  bridge: '#aa8844',
+  shrine: '#88ccff',
+  wall: '#888899',
+  garden: '#66aa44',
+};
+
+const SPRITE_NAMES = [
+  'grass', 'water', 'sand', 'rock', 'forest', 'mountain', 'swamp',
+  'wanderer', 'builder', 'gatherer', 'guardian',
+  'campfire', 'tower', 'bridge', 'shrine', 'wall', 'garden',
+];
+
+function loadSprites() {
+  let loaded = 0;
+  const total = SPRITE_NAMES.length;
+
+  for (const name of SPRITE_NAMES) {
+    const img = new Image();
+    img.onload = () => {
+      sprites[name] = img;
+      loaded++;
+      if (loaded === total) {
+        spritesLoaded = true;
+        render();
+      }
+    };
+    img.onerror = () => {
+      // Fallback: no sprite, will use colored rectangles
+      sprites[name] = null;
+      loaded++;
+      if (loaded === total) {
+        spritesLoaded = true;
+        render();
+      }
+    };
+    img.src = `/sprites/${name}.png`;
+  }
+
+  // Start rendering even if sprites haven't loaded
+  setTimeout(() => { if (!spritesLoaded) render(); }, 500);
+}
+
+// ===================== RENDERING =====================
+function resizeCanvas() {
+  const wrap = document.getElementById('canvas-wrap');
+  const w = wrap.clientWidth;
+  const h = wrap.clientHeight;
+  canvas.width = w;
+  canvas.height = h;
+  weatherCanvas.width = w;
+  weatherCanvas.height = h;
+  render();
+}
+
+function worldToScreen(wx, wy) {
+  return {
+    x: (wx - camera.x) * camera.zoom + canvas.width / 2,
+    y: (wy - camera.y) * camera.zoom + canvas.height / 2,
+  };
+}
+
+function screenToWorld(sx, sy) {
+  return {
+    x: (sx - canvas.width / 2) / camera.zoom + camera.x,
+    y: (sy - canvas.height / 2) / camera.zoom + camera.y,
+  };
+}
+
+function render() {
+  if (!state) return;
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = '#0a0a0f';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  const ts = TILE_SIZE * camera.zoom;
+
+  // Visible tile range
+  const topLeft = screenToWorld(0, 0);
+  const botRight = screenToWorld(canvas.width, canvas.height);
+  const minTX = Math.max(0, Math.floor(topLeft.x / TILE_SIZE) - 1);
+  const minTY = Math.max(0, Math.floor(topLeft.y / TILE_SIZE) - 1);
+  const maxTX = Math.min(GRID - 1, Math.ceil(botRight.x / TILE_SIZE));
+  const maxTY = Math.min(GRID - 1, Math.ceil(botRight.y / TILE_SIZE));
+
+  // Time-of-day tint
+  let tint = null;
+  if (state.worldState) {
+    const tod = state.worldState.timeOfDay;
+    if (tod === 'night') tint = 'rgba(10, 10, 40, 0.45)';
+    else if (tod === 'dawn') tint = 'rgba(60, 30, 10, 0.15)';
+    else if (tod === 'dusk') tint = 'rgba(50, 20, 20, 0.2)';
+  }
+
+  // Draw tiles
+  for (let ty = minTY; ty <= maxTY; ty++) {
+    for (let tx = minTX; tx <= maxTX; tx++) {
+      const tile = state.tiles[ty * GRID + tx];
+      if (!tile) continue;
+
+      const sp = worldToScreen(tx * TILE_SIZE, ty * TILE_SIZE);
+
+      if (sprites[tile.terrain]) {
+        ctx.drawImage(sprites[tile.terrain], sp.x, sp.y, ts, ts);
+      } else {
+        ctx.fillStyle = TERRAIN_COLORS[tile.terrain] || '#333';
+        ctx.fillRect(sp.x, sp.y, ts, ts);
+      }
+
+      // Resource indicator
+      if (tile.resource !== 'none' && camera.zoom >= 0.6) {
+        ctx.fillStyle = 'rgba(255,255,100,0.4)';
+        ctx.beginPath();
+        ctx.arc(sp.x + ts - 6 * camera.zoom, sp.y + 6 * camera.zoom, 3 * camera.zoom, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Grid line
+      if (camera.zoom >= 0.8) {
+        ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+        ctx.strokeRect(sp.x, sp.y, ts, ts);
+      }
+    }
+  }
+
+  // Time tint
+  if (tint) {
+    ctx.fillStyle = tint;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  }
+
+  // Draw structures
+  if (state.structures) {
+    for (const s of state.structures) {
+      const sp = worldToScreen(s.x * TILE_SIZE + TILE_SIZE * 0.1, s.y * TILE_SIZE + TILE_SIZE * 0.1);
+      const ss = ts * 0.8;
+
+      if (sprites[s.structureType]) {
+        ctx.drawImage(sprites[s.structureType], sp.x, sp.y, ss, ss);
+      } else {
+        ctx.fillStyle = STRUCTURE_COLORS[s.structureType] || '#888';
+        ctx.globalAlpha = 0.8;
+        ctx.fillRect(sp.x, sp.y, ss, ss);
+        ctx.globalAlpha = 1;
+      }
+
+      // Durability bar
+      if (camera.zoom >= 0.6) {
+        const maxDur = { campfire: 50, tower: 200, bridge: 150, shrine: 300, wall: 250, garden: 80 }[s.structureType] || 100;
+        const pct = s.durability / maxDur;
+        const bw = ss * 0.8;
+        const bx = sp.x + (ss - bw) / 2;
+        const by = sp.y - 4 * camera.zoom;
+        ctx.fillStyle = 'rgba(0,0,0,0.5)';
+        ctx.fillRect(bx, by, bw, 3 * camera.zoom);
+        ctx.fillStyle = pct > 0.5 ? '#44aa66' : pct > 0.2 ? '#ccaa44' : '#cc4444';
+        ctx.fillRect(bx, by, bw * pct, 3 * camera.zoom);
+      }
+    }
+  }
+
+  // Draw entities
+  if (state.entities) {
+    for (const ent of state.entities) {
+      const sp = worldToScreen(ent.x * TILE_SIZE + TILE_SIZE * 0.15, ent.y * TILE_SIZE + TILE_SIZE * 0.15);
+      const es = ts * 0.7;
+
+      if (sprites[ent.entityType]) {
+        ctx.drawImage(sprites[ent.entityType], sp.x, sp.y, es, es);
+      } else {
+        ctx.fillStyle = ENTITY_COLORS[ent.entityType] || '#fff';
+        ctx.beginPath();
+        ctx.arc(sp.x + es / 2, sp.y + es / 2, es / 2.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Selected highlight
+      if (ent.id === selectedEntityId) {
+        ctx.strokeStyle = '#ffcc44';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(sp.x - 2, sp.y - 2, es + 4, es + 4);
+        ctx.lineWidth = 1;
+      }
+
+      // Name label
+      if (camera.zoom >= 0.8) {
+        ctx.font = `${Math.max(8, 10 * camera.zoom)}px monospace`;
+        ctx.fillStyle = 'rgba(255,255,255,0.7)';
+        ctx.textAlign = 'center';
+        const shortName = ent.name.split(' ')[0];
+        ctx.fillText(shortName, sp.x + es / 2, sp.y - 4 * camera.zoom);
+        ctx.textAlign = 'left';
+      }
+
+      // Energy bar
+      if (camera.zoom >= 0.6) {
+        const bw = es * 0.8;
+        const bx = sp.x + (es - bw) / 2;
+        const by = sp.y + es + 2 * camera.zoom;
+        ctx.fillStyle = 'rgba(0,0,0,0.5)';
+        ctx.fillRect(bx, by, bw, 2 * camera.zoom);
+        ctx.fillStyle = ent.energy > 50 ? '#44cc66' : ent.energy > 20 ? '#ccaa44' : '#cc4444';
+        ctx.fillRect(bx, by, bw * (ent.energy / 100), 2 * camera.zoom);
+      }
+    }
+  }
+
+  // Render minimap
+  renderMinimap();
+}
+
+function renderMinimap() {
+  if (!state || !state.tiles) return;
+  minimapCtx.clearRect(0, 0, 128, 128);
+
+  const s = 128 / GRID;
+  for (let i = 0; i < state.tiles.length; i++) {
+    const tile = state.tiles[i];
+    minimapCtx.fillStyle = TERRAIN_COLORS[tile.terrain] || '#333';
+    minimapCtx.fillRect(tile.x * s, tile.y * s, s, s);
+  }
+
+  // Entities on minimap
+  if (state.entities) {
+    for (const ent of state.entities) {
+      minimapCtx.fillStyle = ENTITY_COLORS[ent.entityType] || '#fff';
+      minimapCtx.fillRect(ent.x * s, ent.y * s, s * 1.5, s * 1.5);
+    }
+  }
+
+  // Structures on minimap
+  if (state.structures) {
+    for (const st of state.structures) {
+      minimapCtx.fillStyle = STRUCTURE_COLORS[st.structureType] || '#888';
+      minimapCtx.fillRect(st.x * s + 0.5, st.y * s + 0.5, s, s);
+    }
+  }
+
+  // Camera viewport
+  const vpTL = screenToWorld(0, 0);
+  const vpBR = screenToWorld(canvas.width, canvas.height);
+  minimapCtx.strokeStyle = 'rgba(255,255,255,0.5)';
+  minimapCtx.lineWidth = 1;
+  minimapCtx.strokeRect(
+    vpTL.x / TILE_SIZE * s,
+    vpTL.y / TILE_SIZE * s,
+    (vpBR.x - vpTL.x) / TILE_SIZE * s,
+    (vpBR.y - vpTL.y) / TILE_SIZE * s
+  );
+}
+
+function renderWeather() {
+  if (!state || !state.worldState) return;
+  weatherCtx.clearRect(0, 0, weatherCanvas.width, weatherCanvas.height);
+
+  const weather = state.worldState.weather;
+  if (weather === 'rain') {
+    for (let i = 0; i < 120; i++) {
+      const rx = Math.random() * weatherCanvas.width;
+      const ry = Math.random() * weatherCanvas.height;
+      weatherCtx.strokeStyle = 'rgba(140,160,220,0.3)';
+      weatherCtx.beginPath();
+      weatherCtx.moveTo(rx, ry);
+      weatherCtx.lineTo(rx - 1, ry + 8);
+      weatherCtx.stroke();
+    }
+  } else if (weather === 'fog') {
+    weatherCtx.fillStyle = 'rgba(180,180,200,0.12)';
+    weatherCtx.fillRect(0, 0, weatherCanvas.width, weatherCanvas.height);
+  } else if (weather === 'storm') {
+    for (let i = 0; i < 200; i++) {
+      const rx = Math.random() * weatherCanvas.width;
+      const ry = Math.random() * weatherCanvas.height;
+      weatherCtx.strokeStyle = 'rgba(160,180,255,0.4)';
+      weatherCtx.beginPath();
+      weatherCtx.moveTo(rx, ry);
+      weatherCtx.lineTo(rx - 3, ry + 14);
+      weatherCtx.stroke();
+    }
+    if (Math.random() < 0.03) {
+      weatherCtx.fillStyle = 'rgba(255,255,255,0.08)';
+      weatherCtx.fillRect(0, 0, weatherCanvas.width, weatherCanvas.height);
+    }
+  }
+}
+
+// ===================== UI UPDATES =====================
+function updateUI() {
+  if (!state) return;
+
+  const ws = state.worldState;
+  document.getElementById('info-tick').textContent = ws.tick;
+  document.getElementById('info-epoch').textContent = ws.epoch;
+  document.getElementById('info-season').textContent = ws.season;
+  document.getElementById('info-time').textContent = ws.timeOfDay;
+  document.getElementById('info-weather').textContent = ws.weather;
+  document.getElementById('info-pop').textContent = state.entities ? state.entities.length : 0;
+
+  // Season color
+  const seasonEl = document.getElementById('info-season');
+  const seasonColors = { spring: '#66cc88', summer: '#ccaa44', autumn: '#cc8844', winter: '#88aacc' };
+  seasonEl.style.color = seasonColors[ws.season] || '#c8c8f0';
+
+  // Weather color
+  const weatherEl = document.getElementById('info-weather');
+  const weatherColors = { clear: '#aaaadd', rain: '#6699cc', fog: '#9999aa', storm: '#cc6688' };
+  weatherEl.style.color = weatherColors[ws.weather] || '#c8c8f0';
+
+  // Entity list
+  const listEl = document.getElementById('entity-list');
+  if (state.entities) {
+    listEl.innerHTML = state.entities.map(ent => `
+      <div class="entity-row ${ent.id === selectedEntityId ? 'selected' : ''}" data-id="${ent.id}">
+        <div class="entity-icon" style="background:${ENTITY_COLORS[ent.entityType] || '#888'};border-radius:50%;"></div>
+        <span class="entity-name">${ent.name}</span>
+        <span class="entity-state ${ent.state}">${ent.state}</span>
+      </div>
+    `).join('');
+
+    listEl.querySelectorAll('.entity-row').forEach(row => {
+      row.addEventListener('click', () => {
+        const id = parseInt(row.dataset.id);
+        selectedEntityId = id === selectedEntityId ? null : id;
+        if (selectedEntityId) {
+          const ent = state.entities.find(e => e.id === selectedEntityId);
+          if (ent) {
+            camera.x = ent.x * TILE_SIZE + TILE_SIZE / 2;
+            camera.y = ent.y * TILE_SIZE + TILE_SIZE / 2;
+          }
+        }
+        updateUI();
+        render();
+      });
+    });
+  }
+
+  // Event log
+  const logEl = document.getElementById('event-log');
+  if (state.eventLog) {
+    const events = state.eventLog.slice(-40).reverse();
+    logEl.innerHTML = events.map(ev => `
+      <div class="event-entry ${ev.eventType}">
+        <span class="tick-num">[${ev.tick}]</span> ${ev.message}
+      </div>
+    `).join('');
+  }
+}
+
+// ===================== INTERACTION =====================
+const wrap = document.getElementById('canvas-wrap');
+
+wrap.addEventListener('mousedown', (e) => {
+  dragging = true;
+  dragStart = { x: e.clientX, y: e.clientY };
+  camStart = { x: camera.x, y: camera.y };
+});
+
+window.addEventListener('mousemove', (e) => {
+  if (!dragging) return;
+  camera.x = camStart.x - (e.clientX - dragStart.x) / camera.zoom;
+  camera.y = camStart.y - (e.clientY - dragStart.y) / camera.zoom;
+  render();
+});
+
+window.addEventListener('mouseup', () => { dragging = false; });
+
+wrap.addEventListener('wheel', (e) => {
+  e.preventDefault();
+  const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
+  camera.zoom = Math.max(0.3, Math.min(4, camera.zoom * zoomFactor));
+  render();
+}, { passive: false });
+
+// Minimap click
+minimapCanvas.addEventListener('click', (e) => {
+  const rect = minimapCanvas.getBoundingClientRect();
+  const mx = (e.clientX - rect.left) / 128 * GRID;
+  const my = (e.clientY - rect.top) / 128 * GRID;
+  camera.x = mx * TILE_SIZE;
+  camera.y = my * TILE_SIZE;
+  render();
+});
+
+// Tooltip on hover
+wrap.addEventListener('mousemove', (e) => {
+  if (dragging || !state) return;
+  const rect = canvas.getBoundingClientRect();
+  const world = screenToWorld(e.clientX - rect.left, e.clientY - rect.top);
+  const tx = Math.floor(world.x / TILE_SIZE);
+  const ty = Math.floor(world.y / TILE_SIZE);
+
+  if (tx < 0 || tx >= GRID || ty < 0 || ty >= GRID) {
+    document.getElementById('tooltip').style.display = 'none';
+    return;
+  }
+
+  const tile = state.tiles[ty * GRID + tx];
+  const tooltip = document.getElementById('tooltip');
+
+  // Check for entity at this tile
+  const ent = state.entities?.find(e => e.x === tx && e.y === ty);
+  const struct = state.structures?.find(s => s.x === tx && s.y === ty);
+
+  let title = '';
+  let body = '';
+
+  if (ent) {
+    title = ent.name;
+    body = `<div class="tt-row">Type: <span class="tt-val">${ent.entityType}</span></div>
+            <div class="tt-row">State: <span class="tt-val">${ent.state}</span></div>
+            <div class="tt-row">HP: <span class="tt-val">${ent.hp}</span> Energy: <span class="tt-val">${ent.energy}</span></div>`;
+    const inv = typeof ent.inventory === 'string' ? JSON.parse(ent.inventory || '{}') : (ent.inventory || {});
+    const items = Object.entries(inv).filter(([,v]) => v > 0);
+    if (items.length > 0) {
+      body += `<div class="tt-row">Inv: <span class="tt-val">${items.map(([k,v]) => `${k}:${v}`).join(', ')}</span></div>`;
+    }
+  } else if (struct) {
+    title = struct.structureType;
+    body = `<div class="tt-row">Durability: <span class="tt-val">${struct.durability}</span></div>`;
+  } else if (tile) {
+    title = `(${tx}, ${ty}) ${tile.terrain}`;
+    body = `<div class="tt-row">Elev: <span class="tt-val">${tile.elevation}</span> Fertile: <span class="tt-val">${tile.fertility}</span></div>`;
+    if (tile.resource !== 'none') {
+      body += `<div class="tt-row">Resource: <span class="tt-val">${tile.resource}</span></div>`;
+    }
+  }
+
+  if (title) {
+    tooltip.querySelector('.tt-title').textContent = title;
+    tooltip.querySelector('.tt-body').innerHTML = body;
+    tooltip.style.display = 'block';
+    tooltip.style.left = (e.clientX + 14) + 'px';
+    tooltip.style.top = (e.clientY + 14) + 'px';
+  } else {
+    tooltip.style.display = 'none';
+  }
+});
+
+wrap.addEventListener('mouseleave', () => {
+  document.getElementById('tooltip').style.display = 'none';
+});
+
+// ===================== WEBSOCKET =====================
+let ws = null;
+let reconnectTimer = null;
+
+function connect() {
+  const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+  ws = new WebSocket(`${proto}//${location.host}`);
+
+  ws.onopen = () => {
+    document.getElementById('conn-status').textContent = 'connected';
+    document.getElementById('conn-status').className = 'connected';
+    if (reconnectTimer) { clearInterval(reconnectTimer); reconnectTimer = null; }
+  };
+
+  ws.onmessage = (e) => {
+    try {
+      const msg = JSON.parse(e.data);
+      if (msg.type === 'state') {
+        state = msg.data;
+        centerCamera();
+        updateUI();
+        render();
+      } else if (msg.type === 'update') {
+        // Partial update: merge entities, structures, events, worldState
+        if (msg.data.worldState) state.worldState = msg.data.worldState;
+        if (msg.data.entities) state.entities = msg.data.entities;
+        if (msg.data.structures) state.structures = msg.data.structures;
+        if (msg.data.eventLog) state.eventLog = msg.data.eventLog;
+        updateUI();
+        render();
+        renderWeather();
+      }
+    } catch (err) {
+      console.error('WS parse error:', err);
+    }
+  };
+
+  ws.onclose = () => {
+    document.getElementById('conn-status').textContent = 'disconnected';
+    document.getElementById('conn-status').className = 'disconnected';
+    if (!reconnectTimer) {
+      reconnectTimer = setInterval(() => connect(), 3000);
+    }
+  };
+
+  ws.onerror = () => ws.close();
+}
+
+function centerCamera() {
+  camera.x = WORLD_PX / 2;
+  camera.y = WORLD_PX / 2;
+  // Fit grid in view
+  const wrap = document.getElementById('canvas-wrap');
+  const minDim = Math.min(wrap.clientWidth, wrap.clientHeight);
+  camera.zoom = minDim / WORLD_PX * 0.9;
+}
+
+// ===================== WEATHER ANIMATION =====================
+let weatherFrame = 0;
+function weatherLoop() {
+  weatherFrame++;
+  if (weatherFrame % 6 === 0) renderWeather();
+  requestAnimationFrame(weatherLoop);
+}
+
+// ===================== INIT =====================
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+loadSprites();
+connect();
+weatherLoop();
+
+// Fetch initial state via REST as fallback
+fetch('/api/state').then(r => r.json()).then(data => {
+  if (!state) {
+    state = data;
+    centerCamera();
+    updateUI();
+    render();
+  }
+}).catch(() => {});
+</script>
+</body>
+</html>
