@@ -17,7 +17,7 @@ import { fileURLToPath } from 'url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = parseInt(process.env.PORT || '18802');
 const STATE_FILE = path.join(__dirname, '..', 'world-state.json');
-const GRID = 128;
+const GRID = 400;
 
 // ===================== WORLD SIMULATION =====================
 
@@ -130,14 +130,22 @@ function initWorld() {
   }
 
   const initialEntities = [
-    { name: 'Aria the Wanderer', entityType: 'wanderer', x: 32, y: 32 },
-    { name: 'Kael the Builder', entityType: 'builder', x: 64, y: 64 },
-    { name: 'Fern the Gatherer', entityType: 'gatherer', x: 96, y: 32 },
-    { name: 'Thane the Guardian', entityType: 'guardian', x: 64, y: 96 },
-    { name: 'Mira the Seer', entityType: 'wanderer', x: 32, y: 96 },
-    { name: 'Oren the Stonemason', entityType: 'builder', x: 96, y: 96 },
-    { name: 'Lys the Herbalist', entityType: 'gatherer', x: 48, y: 48 },
-    { name: 'Dusk the Sentinel', entityType: 'guardian', x: 80, y: 80 },
+    // Northern settlements
+    { name: 'Aria the Wanderer', entityType: 'wanderer', x: 80, y: 60 },
+    { name: 'Fern the Gatherer', entityType: 'gatherer', x: 120, y: 80 },
+    { name: 'Lys the Herbalist', entityType: 'gatherer', x: 300, y: 70 },
+    // Central heartland
+    { name: 'Kael the Builder', entityType: 'builder', x: 200, y: 200 },
+    { name: 'Dusk the Sentinel', entityType: 'guardian', x: 180, y: 220 },
+    { name: 'Oren the Stonemason', entityType: 'builder', x: 220, y: 180 },
+    // Eastern frontier
+    { name: 'Mira the Seer', entityType: 'wanderer', x: 340, y: 160 },
+    { name: 'Thane the Guardian', entityType: 'guardian', x: 320, y: 200 },
+    // Southern expanse
+    { name: 'Vesper the Drifter', entityType: 'wanderer', x: 100, y: 320 },
+    { name: 'Rook the Warden', entityType: 'guardian', x: 200, y: 340 },
+    { name: 'Sage the Forager', entityType: 'gatherer', x: 280, y: 300 },
+    { name: 'Flint the Architect', entityType: 'builder', x: 160, y: 280 },
   ];
 
   for (const e of initialEntities) {
@@ -383,14 +391,45 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// API: Get full world state
+// API: Get dynamic state (no tiles - they're huge)
 app.get('/api/state', (req, res) => {
   res.json({
+    grid: GRID,
     worldState: world.worldState,
-    tiles: world.tiles,
     entities: world.entities,
     structures: world.structures,
     eventLog: world.eventLog.slice(-50),
+  });
+});
+
+// API: Get tiles (binary-packed for efficiency)
+app.get('/api/tiles', (req, res) => {
+  // Pack tiles as compact JSON array of arrays: [terrain_id, elevation, resource_id, fertility]
+  const terrainMap = { water: 0, sand: 1, grass: 2, swamp: 3, forest: 4, rock: 5, mountain: 6 };
+  const resourceMap = { none: 0, wood: 1, stone: 2, herb: 3, crystal: 4 };
+  const packed = world.tiles.map(t => [
+    terrainMap[t.terrain] ?? 2,
+    t.elevation,
+    resourceMap[t.resource] ?? 0,
+    t.fertility
+  ]);
+  res.json({ grid: GRID, tiles: packed });
+});
+
+// API: Get summary (lightweight, for cron/agents)
+app.get('/api/summary', (req, res) => {
+  // Terrain census
+  const terrain = {};
+  for (const t of world.tiles) {
+    terrain[t.terrain] = (terrain[t.terrain] || 0) + 1;
+  }
+  res.json({
+    grid: GRID,
+    worldState: world.worldState,
+    entities: world.entities,
+    structures: world.structures,
+    terrain,
+    eventLog: world.eventLog.slice(-30),
   });
 });
 
@@ -405,7 +444,7 @@ app.post('/api/tick', (req, res) => {
 app.post('/api/spawn', (req, res) => {
   const { name, entityType, x, y } = req.body;
   if (!name || !entityType) return res.status(400).json({ error: 'name and entityType required' });
-  const ent = spawnEntity(name, entityType, x || 16, y || 16);
+  const ent = spawnEntity(name, entityType, x ?? Math.floor(GRID/2), y ?? Math.floor(GRID/2));
   broadcastState();
   res.json({ ok: true, entity: ent });
 });
@@ -444,17 +483,29 @@ const clients = new Set();
 
 wss.on('connection', (ws) => {
   clients.add(ws);
-  // Send current state on connect
+  // Send dynamic state on connect (tiles fetched via REST)
   ws.send(JSON.stringify({
     type: 'state',
     data: {
+      grid: GRID,
       worldState: world.worldState,
-      tiles: world.tiles,
       entities: world.entities,
       structures: world.structures,
       eventLog: world.eventLog.slice(-50),
     }
   }));
+
+  // Handle tile region requests from client
+  ws.on('message', (raw) => {
+    try {
+      const msg = JSON.parse(raw);
+      if (msg.type === 'get-tiles-changed') {
+        // Send tiles that changed since events (meteor/earthquake)
+        // For now, send affected region
+      }
+    } catch(e) {}
+  });
+
   ws.on('close', () => clients.delete(ws));
 });
 

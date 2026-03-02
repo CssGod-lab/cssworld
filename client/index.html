@@ -242,11 +242,12 @@
 <script>
 // ===================== CONFIG =====================
 const TILE_SIZE = 32;
-const GRID = 128;
+const GRID = 400;
 const WORLD_PX = GRID * TILE_SIZE;
 
 // ===================== STATE =====================
 let state = null;
+let tiles = null; // Separate from state for efficiency
 let sprites = {};
 let spritesLoaded = false;
 let camera = { x: 0, y: 0, zoom: 1 };
@@ -254,6 +255,8 @@ let selectedEntityId = null;
 let dragging = false;
 let dragStart = { x: 0, y: 0 };
 let camStart = { x: 0, y: 0 };
+const TERRAIN_NAMES = ['water', 'sand', 'grass', 'swamp', 'forest', 'rock', 'mountain'];
+const RESOURCE_NAMES = ['none', 'wood', 'stone', 'herb', 'crystal'];
 
 // ===================== CANVAS =====================
 const canvas = document.getElementById('world-canvas');
@@ -378,33 +381,38 @@ function render() {
     else if (tod === 'dusk') tint = 'rgba(50, 20, 20, 0.2)';
   }
 
-  // Draw tiles
-  for (let ty = minTY; ty <= maxTY; ty++) {
-    for (let tx = minTX; tx <= maxTX; tx++) {
-      const tile = state.tiles[ty * GRID + tx];
-      if (!tile) continue;
+  // Draw tiles (packed format: [terrain_id, elevation, resource_id, fertility])
+  if (tiles) {
+    for (let ty = minTY; ty <= maxTY; ty++) {
+      for (let tx = minTX; tx <= maxTX; tx++) {
+        const idx = ty * GRID + tx;
+        const t = tiles[idx];
+        if (!t) continue;
 
-      const sp = worldToScreen(tx * TILE_SIZE, ty * TILE_SIZE);
+        const terrainName = TERRAIN_NAMES[t[0]] || 'grass';
+        const resourceId = t[2];
+        const sp = worldToScreen(tx * TILE_SIZE, ty * TILE_SIZE);
 
-      if (sprites[tile.terrain]) {
-        ctx.drawImage(sprites[tile.terrain], sp.x, sp.y, ts, ts);
-      } else {
-        ctx.fillStyle = TERRAIN_COLORS[tile.terrain] || '#333';
-        ctx.fillRect(sp.x, sp.y, ts, ts);
-      }
+        if (sprites[terrainName]) {
+          ctx.drawImage(sprites[terrainName], sp.x, sp.y, ts, ts);
+        } else {
+          ctx.fillStyle = TERRAIN_COLORS[terrainName] || '#333';
+          ctx.fillRect(sp.x, sp.y, ts, ts);
+        }
 
-      // Resource indicator
-      if (tile.resource !== 'none' && camera.zoom >= 0.6) {
-        ctx.fillStyle = 'rgba(255,255,100,0.4)';
-        ctx.beginPath();
-        ctx.arc(sp.x + ts - 6 * camera.zoom, sp.y + 6 * camera.zoom, 3 * camera.zoom, 0, Math.PI * 2);
-        ctx.fill();
-      }
+        // Resource indicator
+        if (resourceId > 0 && camera.zoom >= 0.6) {
+          ctx.fillStyle = 'rgba(255,255,100,0.4)';
+          ctx.beginPath();
+          ctx.arc(sp.x + ts - 6 * camera.zoom, sp.y + 6 * camera.zoom, 3 * camera.zoom, 0, Math.PI * 2);
+          ctx.fill();
+        }
 
-      // Grid line
-      if (camera.zoom >= 0.8) {
-        ctx.strokeStyle = 'rgba(255,255,255,0.04)';
-        ctx.strokeRect(sp.x, sp.y, ts, ts);
+        // Grid line (only when zoomed in)
+        if (camera.zoom >= 1.2) {
+          ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+          ctx.strokeRect(sp.x, sp.y, ts, ts);
+        }
       }
     }
   }
