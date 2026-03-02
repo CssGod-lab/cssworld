@@ -17,6 +17,7 @@ import { fileURLToPath } from 'url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = parseInt(process.env.PORT || '18802');
 const STATE_FILE = path.join(__dirname, '..', 'world-state.json');
+const GRID = 128;
 
 // ===================== WORLD SIMULATION =====================
 
@@ -91,8 +92,8 @@ function initWorld() {
   world.nextEntityId = 1;
   world.nextStructureId = 1;
 
-  for (let y = 0; y < 32; y++) {
-    for (let x = 0; x < 32; x++) {
+  for (let y = 0; y < GRID; y++) {
+    for (let x = 0; x < GRID; x++) {
       const heightVal = fbm(x, y, SEED);
       const moistureVal = fbm(x, y, SEED + 500);
       const elevation = Math.floor(heightVal * 10);
@@ -129,10 +130,14 @@ function initWorld() {
   }
 
   const initialEntities = [
-    { name: 'Aria the Wanderer', entityType: 'wanderer', x: 8, y: 8 },
-    { name: 'Kael the Builder', entityType: 'builder', x: 16, y: 16 },
-    { name: 'Fern the Gatherer', entityType: 'gatherer', x: 24, y: 8 },
-    { name: 'Thane the Guardian', entityType: 'guardian', x: 16, y: 24 },
+    { name: 'Aria the Wanderer', entityType: 'wanderer', x: 32, y: 32 },
+    { name: 'Kael the Builder', entityType: 'builder', x: 64, y: 64 },
+    { name: 'Fern the Gatherer', entityType: 'gatherer', x: 96, y: 32 },
+    { name: 'Thane the Guardian', entityType: 'guardian', x: 64, y: 96 },
+    { name: 'Mira the Seer', entityType: 'wanderer', x: 32, y: 96 },
+    { name: 'Oren the Stonemason', entityType: 'builder', x: 96, y: 96 },
+    { name: 'Lys the Herbalist', entityType: 'gatherer', x: 48, y: 48 },
+    { name: 'Dusk the Sentinel', entityType: 'guardian', x: 80, y: 80 },
   ];
 
   for (const e of initialEntities) {
@@ -149,20 +154,21 @@ function initWorld() {
     addEvent(0, `${e.name} appeared at (${e.x}, ${e.y})`, 0, e.x, e.y, 'spawn');
   }
 
-  addEvent(0, 'World initialized: 32x32 grid generated', 0, 0, 0, 'discovery');
+  addEvent(0, `World initialized: ${GRID}x${GRID} grid generated`, 0, 0, 0, 'discovery');
   saveState();
 }
 
 function addEvent(tick, message, entityId, x, y, eventType) {
   world.eventLog.push({ tick, message, entityId, x, y, eventType, createdAt: tick });
-  // Keep last 200 events
-  if (world.eventLog.length > 200) {
-    world.eventLog = world.eventLog.slice(-200);
+  // Keep last 500 events
+  if (world.eventLog.length > 500) {
+    world.eventLog = world.eventLog.slice(-500);
   }
 }
 
 function getTileAt(x, y) {
-  return world.tiles.find(t => t.x === x && t.y === y);
+  if (x < 0 || x >= GRID || y < 0 || y >= GRID) return null;
+  return world.tiles[y * GRID + x];
 }
 
 function advanceTick() {
@@ -212,8 +218,8 @@ function advanceTick() {
       if (moveRoll < 0.7) {
         const dirIdx = Math.floor(rng() * 4);
         const dir = dirs[dirIdx];
-        const newX = Math.max(0, Math.min(31, ent.x + dir.dx));
-        const newY = Math.max(0, Math.min(31, ent.y + dir.dy));
+        const newX = Math.max(0, Math.min(GRID - 1, ent.x + dir.dx));
+        const newY = Math.max(0, Math.min(GRID - 1, ent.y + dir.dy));
 
         const tile = getTileAt(newX, newY);
         let canMove = true;
@@ -296,8 +302,8 @@ function worldEvent(eventName) {
   const rng = mulberry32(hashSeed(tick, 9999, eventName.length));
 
   if (eventName === 'meteor') {
-    const mx = Math.floor(rng() * 32);
-    const my = Math.floor(rng() * 32);
+    const mx = Math.floor(rng() * GRID);
+    const my = Math.floor(rng() * GRID);
     for (const t of world.tiles) {
       const dx = Math.abs(t.x - mx);
       const dy = Math.abs(t.y - my);
@@ -316,15 +322,15 @@ function worldEvent(eventName) {
         else if (t.elevation <= 1 && t.terrain !== 'mountain') t.terrain = 'swamp';
       }
     }
-    addEvent(tick, 'An earthquake shook the land!', 0, 16, 16, 'discovery');
+    addEvent(tick, 'An earthquake shook the land!', 0, GRID/2, GRID/2, 'discovery');
   } else if (eventName === 'migration') {
     const types = ['wanderer', 'builder', 'gatherer', 'guardian'];
     const names = ['Nova', 'Elm', 'Sage', 'Flint', 'Coral'];
     for (let i = 0; i < 3; i++) {
       const etype = types[Math.floor(rng() * 4)];
       const ename = names[Math.floor(rng() * 5)] + ' the ' + etype.charAt(0).toUpperCase() + etype.slice(1);
-      const ex = Math.floor(rng() * 32);
-      const ey = Math.floor(rng() * 32);
+      const ex = Math.floor(rng() * GRID);
+      const ey = Math.floor(rng() * GRID);
       spawnEntity(ename, etype, ex, ey);
     }
   } else if (eventName === 'blessing') {
@@ -337,7 +343,7 @@ function worldEvent(eventName) {
         t.fertility = Math.min(100, t.fertility + 20);
       }
     }
-    addEvent(tick, 'A divine blessing washed over the land!', 0, 16, 16, 'discovery');
+    addEvent(tick, 'A divine blessing washed over the land!', 0, GRID/2, GRID/2, 'discovery');
   }
   saveState();
 }
