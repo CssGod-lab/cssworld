@@ -221,7 +221,7 @@
   </div>
   <div id="sidebar">
     <div id="minimap-wrap">
-      <canvas id="minimap" width="128" height="128"></canvas>
+      <canvas id="minimap" width="200" height="200"></canvas>
     </div>
     <div class="sidebar-section">
       <h3>Entities</h3>
@@ -504,29 +504,40 @@ function render() {
 }
 
 function renderMinimap() {
-  if (!state || !state.tiles) return;
-  minimapCtx.clearRect(0, 0, 128, 128);
+  if (!tiles) return;
+  const MM = 200;
+  minimapCtx.clearRect(0, 0, MM, MM);
 
-  const s = 128 / GRID;
-  for (let i = 0; i < state.tiles.length; i++) {
-    const tile = state.tiles[i];
-    minimapCtx.fillStyle = TERRAIN_COLORS[tile.terrain] || '#333';
-    minimapCtx.fillRect(tile.x * s, tile.y * s, s, s);
+  // For large grids, sample every Nth tile for minimap performance
+  const step = Math.max(1, Math.floor(GRID / MM));
+  const s = MM / GRID;
+  const blockSize = Math.max(1, Math.ceil(s * step));
+
+  for (let ty = 0; ty < GRID; ty += step) {
+    for (let tx = 0; tx < GRID; tx += step) {
+      const t = tiles[ty * GRID + tx];
+      if (!t) continue;
+      const terrainName = TERRAIN_NAMES[t[0]] || 'grass';
+      minimapCtx.fillStyle = TERRAIN_COLORS[terrainName] || '#333';
+      minimapCtx.fillRect(tx * s, ty * s, blockSize, blockSize);
+    }
   }
 
-  // Entities on minimap
-  if (state.entities) {
+  // Entities on minimap (draw as visible dots)
+  if (state && state.entities) {
     for (const ent of state.entities) {
       minimapCtx.fillStyle = ENTITY_COLORS[ent.entityType] || '#fff';
-      minimapCtx.fillRect(ent.x * s, ent.y * s, s * 1.5, s * 1.5);
+      const dotSize = Math.max(2, s * 2);
+      minimapCtx.fillRect(ent.x * s - dotSize/2, ent.y * s - dotSize/2, dotSize, dotSize);
     }
   }
 
   // Structures on minimap
-  if (state.structures) {
+  if (state && state.structures) {
     for (const st of state.structures) {
       minimapCtx.fillStyle = STRUCTURE_COLORS[st.structureType] || '#888';
-      minimapCtx.fillRect(st.x * s + 0.5, st.y * s + 0.5, s, s);
+      const dotSize = Math.max(2, s * 1.5);
+      minimapCtx.fillRect(st.x * s, st.y * s, dotSize, dotSize);
     }
   }
 
@@ -668,8 +679,8 @@ wrap.addEventListener('wheel', (e) => {
 // Minimap click
 minimapCanvas.addEventListener('click', (e) => {
   const rect = minimapCanvas.getBoundingClientRect();
-  const mx = (e.clientX - rect.left) / 128 * GRID;
-  const my = (e.clientY - rect.top) / 128 * GRID;
+  const mx = (e.clientX - rect.left) / 200 * GRID;
+  const my = (e.clientY - rect.top) / 200 * GRID;
   camera.x = mx * TILE_SIZE;
   camera.y = my * TILE_SIZE;
   render();
@@ -688,7 +699,7 @@ wrap.addEventListener('mousemove', (e) => {
     return;
   }
 
-  const tile = state.tiles[ty * GRID + tx];
+  const tileData = tiles ? tiles[ty * GRID + tx] : null;
   const tooltip = document.getElementById('tooltip');
 
   // Check for entity at this tile
@@ -711,11 +722,13 @@ wrap.addEventListener('mousemove', (e) => {
   } else if (struct) {
     title = struct.structureType;
     body = `<div class="tt-row">Durability: <span class="tt-val">${struct.durability}</span></div>`;
-  } else if (tile) {
-    title = `(${tx}, ${ty}) ${tile.terrain}`;
-    body = `<div class="tt-row">Elev: <span class="tt-val">${tile.elevation}</span> Fertile: <span class="tt-val">${tile.fertility}</span></div>`;
-    if (tile.resource !== 'none') {
-      body += `<div class="tt-row">Resource: <span class="tt-val">${tile.resource}</span></div>`;
+  } else if (tileData) {
+    const terrainName = TERRAIN_NAMES[tileData[0]] || 'unknown';
+    const resourceName = RESOURCE_NAMES[tileData[2]] || 'none';
+    title = `(${tx}, ${ty}) ${terrainName}`;
+    body = `<div class="tt-row">Elev: <span class="tt-val">${tileData[1]}</span> Fertile: <span class="tt-val">${tileData[3]}</span></div>`;
+    if (tileData[2] > 0) {
+      body += `<div class="tt-row">Resource: <span class="tt-val">${resourceName}</span></div>`;
     }
   }
 
@@ -753,11 +766,10 @@ function connect() {
       const msg = JSON.parse(e.data);
       if (msg.type === 'state') {
         state = msg.data;
-        centerCamera();
-        updateUI();
-        render();
+        // Tiles loaded separately via REST
+        if (!tiles) fetchTiles();
+        else { centerCamera(); updateUI(); render(); }
       } else if (msg.type === 'update') {
-        // Partial update: merge entities, structures, events, worldState
         if (msg.data.worldState) state.worldState = msg.data.worldState;
         if (msg.data.entities) state.entities = msg.data.entities;
         if (msg.data.structures) state.structures = msg.data.structures;
@@ -799,6 +811,26 @@ function weatherLoop() {
   requestAnimationFrame(weatherLoop);
 }
 
+// ===================== TILE LOADING =====================
+function fetchTiles() {
+  const loading = document.getElementById('conn-status');
+  loading.textContent = 'loading tiles...';
+  loading.className = 'disconnected';
+
+  fetch('/api/tiles').then(r => r.json()).then(data => {
+    tiles = data.tiles;
+    loading.textContent = 'connected';
+    loading.className = 'connected';
+    centerCamera();
+    updateUI();
+    render();
+    console.log(`Loaded ${tiles.length} tiles (${data.grid}x${data.grid})`);
+  }).catch(err => {
+    console.error('Failed to load tiles:', err);
+    loading.textContent = 'tile load failed';
+  });
+}
+
 // ===================== INIT =====================
 window.addEventListener('resize', resizeCanvas);
 resizeCanvas();
@@ -810,9 +842,7 @@ weatherLoop();
 fetch('/api/state').then(r => r.json()).then(data => {
   if (!state) {
     state = data;
-    centerCamera();
-    updateUI();
-    render();
+    fetchTiles();
   }
 }).catch(() => {});
 </script>
