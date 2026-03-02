@@ -15,7 +15,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const PORT = parseInt(process.env.PORT || '18802');
+const PORT = parseInt(process.env.PORT || '18808');
 const STATE_FILE = path.join(__dirname, '..', 'world-state.json');
 
 // ===================== WORLD SIMULATION =====================
