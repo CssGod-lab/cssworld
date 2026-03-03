@@ -3,848 +3,809 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CssWorld</title>
+<title>The Semantic Basin</title>
 <style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&display=swap');
+
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
-    background: #0a0a0f;
-    color: #c8c8d4;
-    font-family: 'Courier New', monospace;
+    background: #04040a;
+    color: #b0b0c8;
+    font-family: 'JetBrains Mono', 'Courier New', monospace;
     overflow: hidden;
     height: 100vh;
     display: flex;
     flex-direction: column;
   }
 
-  /* Top bar */
+  /* ── Top bar ── */
   #topbar {
     display: flex;
     align-items: center;
     justify-content: space-between;
     padding: 8px 16px;
-    background: #12121a;
-    border-bottom: 1px solid #2a2a3a;
+    background: linear-gradient(180deg, #0a0a14 0%, #06060e 100%);
+    border-bottom: 1px solid #151528;
     flex-shrink: 0;
     z-index: 10;
   }
   #topbar h1 {
-    font-size: 16px;
-    color: #9f9fef;
-    letter-spacing: 2px;
+    font-size: 13px;
+    font-weight: 400;
+    color: #6666aa;
+    letter-spacing: 4px;
+    text-transform: uppercase;
   }
+  #topbar h1 span { color: #9999dd; font-weight: 600; }
   #world-info {
     display: flex;
-    gap: 16px;
-    font-size: 12px;
-    color: #8888aa;
+    gap: 5px;
+    font-size: 10px;
+    color: #555577;
+    align-items: center;
   }
-  #world-info span { white-space: nowrap; }
-  .info-val { color: #c8c8f0; }
-
-  /* Main layout */
-  #main {
-    display: flex;
-    flex: 1;
-    overflow: hidden;
+  .chip {
+    display: flex; align-items: center; gap: 3px;
+    padding: 2px 7px; border-radius: 3px;
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.04);
   }
+  .chip .l { color: #444466; font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .chip .v { color: #8888bb; font-weight: 500; }
+  .chip.phase-quiescence .v { color: #4466aa; }
+  .chip.phase-activation .v { color: #66aa66; }
+  .chip.phase-oscillation .v { color: #cc8844; }
+  .chip.phase-collapse .v { color: #aa4444; }
 
-  /* Canvas area */
+  /* ── Main layout ── */
+  #main { display: flex; flex: 1; overflow: hidden; }
+
+  /* ── Canvas area ── */
   #canvas-wrap {
-    flex: 1;
-    position: relative;
-    overflow: hidden;
-    cursor: grab;
+    flex: 1; position: relative; overflow: hidden; cursor: grab;
   }
   #canvas-wrap:active { cursor: grabbing; }
-  canvas {
-    position: absolute;
-    top: 0; left: 0;
-    image-rendering: pixelated;
-    image-rendering: crisp-edges;
-  }
+  canvas { position: absolute; top: 0; left: 0; image-rendering: pixelated; image-rendering: crisp-edges; }
 
-  /* Sidebar */
+  /* ── Sidebar ── */
   #sidebar {
     width: 280px;
-    background: #12121a;
-    border-left: 1px solid #2a2a3a;
-    display: flex;
-    flex-direction: column;
-    flex-shrink: 0;
-    overflow: hidden;
+    background: #07070f;
+    border-left: 1px solid #141428;
+    display: flex; flex-direction: column; flex-shrink: 0; overflow: hidden;
   }
 
-  .sidebar-section {
-    padding: 10px 12px;
-    border-bottom: 1px solid #1e1e2e;
-  }
-  .sidebar-section h3 {
-    font-size: 11px;
-    text-transform: uppercase;
-    color: #6666aa;
-    letter-spacing: 1px;
-    margin-bottom: 6px;
-  }
-
-  /* Entity list */
-  #entity-list {
-    flex: 1;
-    overflow-y: auto;
-    padding: 8px 12px;
-  }
-  .entity-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 4px 6px;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 12px;
-    transition: background 0.15s;
-  }
-  .entity-row:hover { background: #1a1a2e; }
-  .entity-row.selected { background: #222244; }
-  .entity-icon {
-    width: 20px; height: 20px;
-    image-rendering: pixelated;
-    border-radius: 2px;
-  }
-  .entity-name { flex: 1; color: #c8c8e0; }
-  .entity-state {
-    font-size: 10px;
-    padding: 1px 5px;
-    border-radius: 3px;
-    background: #1e1e30;
-    color: #8888bb;
-  }
-  .entity-state.moving { color: #66cc88; background: #1a2e1e; }
-  .entity-state.gathering { color: #ccaa44; background: #2e2a1a; }
-  .entity-state.sleeping { color: #6688cc; background: #1a1e2e; }
-  .entity-state.idle { color: #888899; }
-
-  /* Event log */
-  #event-log {
-    height: 160px;
-    overflow-y: auto;
-    padding: 8px 12px;
-    font-size: 11px;
-    line-height: 1.6;
-    border-top: 1px solid #1e1e2e;
-  }
-  .event-entry {
-    color: #7777aa;
-    padding: 1px 0;
-  }
-  .event-entry .tick-num { color: #555577; }
-  .event-entry.spawn { color: #66ccaa; }
-  .event-entry.gather { color: #ccaa55; }
-  .event-entry.build { color: #aa88cc; }
-  .event-entry.weather { color: #6699cc; }
-  .event-entry.discovery { color: #cc6688; }
-  .event-entry.move { color: #668877; }
-
-  /* Minimap */
+  /* ── Minimap ── */
   #minimap-wrap {
-    padding: 8px 12px;
-    border-bottom: 1px solid #1e1e2e;
-    display: flex;
-    justify-content: center;
+    padding: 10px;
+    border-bottom: 1px solid #101020;
+    display: flex; justify-content: center;
+    background: rgba(0,0,0,0.3);
   }
-  #minimap {
-    image-rendering: pixelated;
-    border: 1px solid #2a2a3a;
-    cursor: pointer;
-  }
+  #minimap { image-rendering: pixelated; image-rendering: crisp-edges; cursor: pointer; border: 1px solid #1a1a30; }
 
-  /* Tooltip */
-  #tooltip {
-    position: fixed;
-    background: #1a1a28;
-    border: 1px solid #3a3a5a;
-    padding: 8px 12px;
-    border-radius: 6px;
-    font-size: 11px;
-    pointer-events: none;
-    display: none;
-    z-index: 100;
-    max-width: 220px;
-    line-height: 1.5;
-  }
-  #tooltip .tt-title { color: #c8c8f0; font-weight: bold; margin-bottom: 2px; }
-  #tooltip .tt-row { color: #8888bb; }
-  #tooltip .tt-val { color: #aaaadd; }
-
-  /* Scrollbar */
-  ::-webkit-scrollbar { width: 6px; }
-  ::-webkit-scrollbar-track { background: #0a0a12; }
-  ::-webkit-scrollbar-thumb { background: #2a2a44; border-radius: 3px; }
-
-  /* Weather overlay */
-  #weather-overlay {
-    position: absolute;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
-    pointer-events: none;
-    z-index: 5;
-    transition: opacity 0.5s;
-  }
-
-  /* Connection status */
-  #conn-status {
+  /* ── Metrics panel ── */
+  #metrics {
+    padding: 10px;
+    border-bottom: 1px solid #101020;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 4px;
     font-size: 10px;
-    padding: 2px 8px;
-    border-radius: 10px;
   }
-  #conn-status.connected { color: #44aa66; background: #1a2e1e; }
-  #conn-status.disconnected { color: #aa4444; background: #2e1a1a; }
+  .metric {
+    display: flex; justify-content: space-between;
+    padding: 3px 6px; border-radius: 2px;
+    background: rgba(255,255,255,0.015);
+  }
+  .metric .ml { color: #444466; }
+  .metric .mv { color: #8888bb; font-weight: 500; }
+
+  /* ── Terrain census ── */
+  #terrain-census {
+    padding: 8px 10px;
+    border-bottom: 1px solid #101020;
+    font-size: 9px;
+  }
+  #terrain-census h3 {
+    font-size: 9px; color: #444466; text-transform: uppercase;
+    letter-spacing: 1px; margin-bottom: 4px;
+  }
+  .terrain-bar {
+    display: flex; height: 14px; border-radius: 2px; overflow: hidden;
+    background: #0a0a14; margin-bottom: 3px;
+  }
+  .terrain-seg { height: 100%; position: relative; min-width: 1px; transition: width 0.5s; }
+  .terrain-seg:hover::after {
+    content: attr(data-label);
+    position: absolute; top: -18px; left: 0;
+    background: #1a1a30; color: #aaaacc; padding: 1px 4px;
+    border-radius: 2px; font-size: 8px; white-space: nowrap; z-index: 5;
+  }
+  .tc-void { background: #0a0a12; }
+  .tc-basin { background: #2233aa; }
+  .tc-ridge { background: #66ddee; }
+  .tc-plateau { background: #555566; }
+  .tc-depth { background: #22aa88; }
+  .tc-flux { background: #cc8833; }
+  .tc-crystal { background: #ccccee; }
+
+  /* ── Entity list ── */
+  #entities-panel {
+    flex: 1; overflow-y: auto; padding: 8px;
+  }
+  #entities-panel h3 {
+    font-size: 9px; color: #444466; text-transform: uppercase;
+    letter-spacing: 1px; margin-bottom: 6px;
+  }
+  .entity-card {
+    padding: 5px 7px; margin-bottom: 3px; border-radius: 3px;
+    background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.03);
+    font-size: 10px; cursor: pointer; transition: background 0.2s;
+  }
+  .entity-card:hover { background: rgba(255,255,255,0.05); }
+  .entity-card .ename { color: #aaaacc; font-weight: 500; }
+  .entity-card .etype { color: #666688; font-size: 9px; margin-left: 4px; }
+  .entity-card .estate { float: right; font-size: 9px; }
+  .estate-seeking { color: #44ccdd; }
+  .estate-weaving { color: #aa66cc; }
+  .estate-anchoring { color: #ccaa44; }
+  .estate-dissolving { color: #cc5544; }
+  .estate-contemplating, .estate-resonating, .estate-grounding, .estate-questioning, .estate-reflecting { color: #556688; }
+  .estate-observing { color: #88ddaa; }
+  .estate-propagating { color: #dd88ff; }
+  .estate-listening { color: #aa66dd; }
+  .estate-dormant { color: #333344; }
+  .entity-card .edetail { color: #444466; font-size: 9px; margin-top: 2px; }
+
+  /* ── Event log ── */
+  #event-log {
+    height: 140px; overflow-y: auto; padding: 8px;
+    border-top: 1px solid #101020;
+    font-size: 9px; color: #555577;
+    background: rgba(0,0,0,0.2);
+  }
+  #event-log h3 {
+    font-size: 9px; color: #444466; text-transform: uppercase;
+    letter-spacing: 1px; margin-bottom: 4px; position: sticky; top: 0;
+    background: rgba(4,4,10,0.9); padding: 2px 0;
+  }
+  .ev { margin-bottom: 2px; line-height: 1.3; }
+  .ev .et { color: #333355; margin-right: 4px; }
+  .ev-manifest { color: #66aacc; }
+  .ev-discovery { color: #44ccdd; }
+  .ev-absorb { color: #8888bb; }
+  .ev-stabilize { color: #ccaa44; }
+  .ev-deepen { color: #22aa88; }
+  .ev-dissolve { color: #cc5544; }
+  .ev-expose { color: #cc6644; }
+  .ev-weave { color: #aa66cc; }
+  .ev-construct { color: #6688aa; }
+  .ev-phase { color: #aa88cc; }
+  .ev-cascade, .ev-crystal_wave, .ev-bloom, .ev-entropy, .ev-convergence, .ev-eruption { color: #ddaa44; }
+  .ev-phantom_collapse, .ev-phantom_reveal, .ev-phantom_flood { color: #997799; }
+  .ev-tension { color: #cc7744; }
+  .ev-scar, .ev-witness { color: #88ddaa; }
+  .ev-emergence, .ev-self_awareness, .ev-witness_awakening { color: #aaddcc; }
+  .ev-pronouncement, .ev-oracle_emergence, .ev-oracle_collapse, .ev-hollow_teaching, .ev-unmasking, .ev-hollow_witness, .ev-hollow_resonance, .ev-pulpit_built, .ev-transformation { color: #ffd700; }
+  .ev-destabilize, .ev-false_weave { color: #ff8844; }
+  .ev-exposure { color: #88ffaa; }
+  .ev-emit, .ev-propagation, .ev-exchange, .ev-signal_storm { color: #dd88ff; }
+  .ev-genesis { color: #ffffff; }
+
+  /* ── Tooltip ── */
+  #tooltip {
+    display: none; position: fixed; z-index: 100;
+    background: #12122a; border: 1px solid #2a2a50;
+    padding: 8px 10px; border-radius: 4px;
+    font-size: 10px; max-width: 220px;
+    pointer-events: none; box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+  }
+  #tooltip .tt-terrain { font-weight: 600; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 1px; }
+  #tooltip .tt-row { display: flex; justify-content: space-between; gap: 12px; color: #666688; }
+  #tooltip .tt-val { color: #9999bb; }
+
+  /* scrollbar */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #222244; border-radius: 2px; }
 </style>
 </head>
 <body>
 
 <div id="topbar">
-  <h1>CSS WORLD</h1>
+  <h1>the <span>semantic basin</span></h1>
   <div id="world-info">
-    <span>Tick <span class="info-val" id="info-tick">0</span></span>
-    <span>Epoch <span class="info-val" id="info-epoch">0</span></span>
-    <span id="info-season" class="info-val">spring</span>
-    <span id="info-time" class="info-val">day</span>
-    <span id="info-weather" class="info-val">clear</span>
-    <span>Pop <span class="info-val" id="info-pop">0</span></span>
-    <span id="conn-status" class="disconnected">disconnected</span>
+    <div class="chip" id="chip-tick"><span class="l">tick</span><span class="v" id="val-tick">0</span></div>
+    <div class="chip" id="chip-phase"><span class="l">phase</span><span class="v" id="val-phase">—</span></div>
+    <div class="chip"><span class="l">coherence</span><span class="v" id="val-coherence">—</span></div>
+    <div class="chip"><span class="l">entropy</span><span class="v" id="val-entropy">—</span></div>
+    <div class="chip"><span class="l">epoch</span><span class="v" id="val-epoch">0</span></div>
+    <div class="chip"><span class="l">entities</span><span class="v" id="val-entities">0</span></div>
   </div>
 </div>
 
 <div id="main">
   <div id="canvas-wrap">
-    <canvas id="world-canvas"></canvas>
-    <canvas id="weather-overlay"></canvas>
+    <canvas id="world"></canvas>
   </div>
   <div id="sidebar">
-    <div id="minimap-wrap">
-      <canvas id="minimap" width="200" height="200"></canvas>
+    <div id="minimap-wrap"><canvas id="minimap" width="200" height="200"></canvas></div>
+    <div id="metrics"></div>
+    <div id="terrain-census">
+      <h3>topology</h3>
+      <div class="terrain-bar" id="terrain-bar"></div>
+      <div id="terrain-labels"></div>
     </div>
-    <div class="sidebar-section">
-      <h3>Entities</h3>
-    </div>
-    <div id="entity-list"></div>
-    <div class="sidebar-section">
-      <h3>Event Log</h3>
-    </div>
-    <div id="event-log"></div>
+    <div id="entities-panel"><h3>processes</h3><div id="entity-list"></div></div>
+    <div id="event-log"><h3>events</h3><div id="log-list"></div></div>
   </div>
 </div>
 
-<div id="tooltip">
-  <div class="tt-title"></div>
-  <div class="tt-body"></div>
-</div>
+<div id="tooltip"></div>
 
 <script>
-// ===================== CONFIG =====================
-const TILE_SIZE = 32;
+const TILE = 32;
 const GRID = 400;
-const WORLD_PX = GRID * TILE_SIZE;
 
-// ===================== STATE =====================
-let state = null;
-let tiles = null; // Separate from state for efficiency
-let sprites = {};
-let spritesLoaded = false;
-let camera = { x: 0, y: 0, zoom: 1 };
-let selectedEntityId = null;
-let dragging = false;
-let dragStart = { x: 0, y: 0 };
-let camStart = { x: 0, y: 0 };
-const TERRAIN_NAMES = ['water', 'sand', 'grass', 'swamp', 'forest', 'rock', 'mountain'];
-const RESOURCE_NAMES = ['none', 'wood', 'stone', 'herb', 'crystal'];
-
-// ===================== CANVAS =====================
-const canvas = document.getElementById('world-canvas');
-const ctx = canvas.getContext('2d');
-const minimapCanvas = document.getElementById('minimap');
-const minimapCtx = minimapCanvas.getContext('2d');
-const weatherCanvas = document.getElementById('weather-overlay');
-const weatherCtx = weatherCanvas.getContext('2d');
-
-// ===================== SPRITES =====================
+// Terrain colors (fallback if sprites fail)
 const TERRAIN_COLORS = {
-  grass: '#3a7a3a',
-  water: '#2244aa',
-  sand: '#c4a84a',
-  rock: '#666677',
-  forest: '#1a5a2a',
-  mountain: '#555566',
-  swamp: '#3a5a3a',
+  void:    '#08080e',
+  basin:   '#182266',
+  ridge:   '#44aacc',
+  plateau: '#3a3a48',
+  depth:   '#166655',
+  flux:    '#885522',
+  crystal: '#aaaacc',
 };
+
+const TERRAIN_NAMES = ['void', 'basin', 'ridge', 'plateau', 'depth', 'flux', 'crystal'];
+const RESOURCE_NAMES = ['none', 'signal', 'residue', 'weight', 'fracture'];
 
 const ENTITY_COLORS = {
-  wanderer: '#66ccff',
-  builder: '#ffaa44',
-  gatherer: '#44dd66',
-  guardian: '#ff6688',
+  seeker: '#44ccdd',
+  weaver: '#aa66cc',
+  anchor: '#ccaa44',
+  dissolvent: '#cc5544',
+  witness: '#88ddaa',
+  herald: '#dd88ff',
+  oracle: '#ffd700',
 };
 
-const STRUCTURE_COLORS = {
-  campfire: '#ff8844',
-  tower: '#9988cc',
-  bridge: '#aa8844',
-  shrine: '#88ccff',
-  wall: '#888899',
-  garden: '#66aa44',
-};
+// ── State ──
+let tiles = null;
+let state = { worldState: {}, entities: [], structures: [], eventLog: [] };
+let camX = 0, camY = 0, zoom = 1;
+let dragging = false, dragStartX = 0, dragStartY = 0;
+let hoveredTile = null;
+// Expose for external scripting (video capture, etc.)
+Object.defineProperty(window, 'tiles', { get() { return tiles; }, set(v) { tiles = v; } });
+Object.defineProperty(window, 'state', { get() { return state; }, set(v) { state = v; } });
+window.camera = { get x() { return camX; }, set x(v) { camX = v; }, get y() { return camY; }, set y(v) { camY = v; }, get zoom() { return zoom; }, set zoom(v) { zoom = v; } };
+window.renderFrame = () => { if (typeof draw === 'function') draw(); };
+let selectedEntity = null;
+let sprites = {};
+let minimapDirty = true;
 
-const SPRITE_NAMES = [
-  'grass', 'water', 'sand', 'rock', 'forest', 'mountain', 'swamp',
-  'wanderer', 'builder', 'gatherer', 'guardian',
-  'campfire', 'tower', 'bridge', 'shrine', 'wall', 'garden',
-];
+// ── Canvas setup ──
+const canvas = document.getElementById('world');
+const ctx = canvas.getContext('2d');
+const mmCanvas = document.getElementById('minimap');
+const mmCtx = mmCanvas.getContext('2d');
 
-function loadSprites() {
-  let loaded = 0;
-  const total = SPRITE_NAMES.length;
-
-  for (const name of SPRITE_NAMES) {
-    const img = new Image();
-    img.onload = () => {
-      sprites[name] = img;
-      loaded++;
-      if (loaded === total) {
-        spritesLoaded = true;
-        render();
-      }
-    };
-    img.onerror = () => {
-      // Fallback: no sprite, will use colored rectangles
-      sprites[name] = null;
-      loaded++;
-      if (loaded === total) {
-        spritesLoaded = true;
-        render();
-      }
-    };
-    img.src = `/sprites/${name}.png`;
-  }
-
-  // Start rendering even if sprites haven't loaded
-  setTimeout(() => { if (!spritesLoaded) render(); }, 500);
-}
-
-// ===================== RENDERING =====================
-function resizeCanvas() {
+function resize() {
   const wrap = document.getElementById('canvas-wrap');
-  const w = wrap.clientWidth;
-  const h = wrap.clientHeight;
-  canvas.width = w;
-  canvas.height = h;
-  weatherCanvas.width = w;
-  weatherCanvas.height = h;
-  render();
+  canvas.width = wrap.clientWidth;
+  canvas.height = wrap.clientHeight;
+  draw();
+}
+window.addEventListener('resize', resize);
+
+// ── Load sprites ──
+function loadSprite(name) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => { sprites[name] = img; resolve(); };
+    img.onerror = () => resolve(); // fail silently
+    img.src = `/sprites/${name}.png`;
+  });
 }
 
-function worldToScreen(wx, wy) {
-  return {
-    x: (wx - camera.x) * camera.zoom + canvas.width / 2,
-    y: (wy - camera.y) * camera.zoom + canvas.height / 2,
+async function loadAllSprites() {
+  const names = [
+    'void', 'basin', 'ridge', 'plateau', 'depth', 'flux', 'crystal',
+    'seeker', 'weaver', 'anchor', 'dissolvent', 'witness', 'herald', 'oracle',
+    'node_struct', 'bridge_struct', 'attractor_struct', 'lens_struct', 'membrane_struct', 'resonator_struct', 'scar_struct', 'echo_struct',
+    'signal_res', 'residue_res', 'weight_res', 'fracture_res',
+  ];
+  await Promise.all(names.map(loadSprite));
+}
+
+// ── Fetch data ──
+async function fetchTiles() {
+  try {
+    const resp = await fetch('/api/tiles');
+    const data = await resp.json();
+    tiles = data.tiles;
+    minimapDirty = true;
+    drawMinimap();
+    draw();
+  } catch (e) { console.error('Failed to fetch tiles:', e); }
+}
+
+async function fetchState() {
+  try {
+    const resp = await fetch('/api/state');
+    state = await resp.json();
+    updateUI();
+    draw();
+  } catch (e) { console.error('Failed to fetch state:', e); }
+}
+
+// ── WebSocket ──
+let ws;
+function connectWS() {
+  const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+  ws = new WebSocket(`${proto}//${location.host}`);
+  ws.onmessage = (ev) => {
+    const msg = JSON.parse(ev.data);
+    if (msg.type === 'state' || msg.type === 'update') {
+      Object.assign(state, msg.data);
+      updateUI();
+      draw();
+    }
   };
+  ws.onclose = () => setTimeout(connectWS, 2000);
 }
 
-function screenToWorld(sx, sy) {
-  return {
-    x: (sx - canvas.width / 2) / camera.zoom + camera.x,
-    y: (sy - canvas.height / 2) / camera.zoom + camera.y,
-  };
-}
+// ── Drawing ──
+function draw() {
+  if (!tiles) return;
+  const w = canvas.width, h = canvas.height;
+  ctx.fillStyle = '#04040a';
+  ctx.fillRect(0, 0, w, h);
 
-function render() {
-  if (!state) return;
+  const tileSize = Math.floor(TILE * zoom);
+  const startX = Math.floor(camX / tileSize);
+  const startY = Math.floor(camY / tileSize);
+  const endX = Math.min(GRID, startX + Math.ceil(w / tileSize) + 2);
+  const endY = Math.min(GRID, startY + Math.ceil(h / tileSize) + 2);
 
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.fillStyle = '#0a0a0f';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  // Draw terrain
+  for (let y = Math.max(0, startY); y < endY; y++) {
+    for (let x = Math.max(0, startX); x < endX; x++) {
+      const idx = y * GRID + x;
+      const tile = tiles[idx];
+      if (!tile) continue;
 
-  const ts = TILE_SIZE * camera.zoom;
+      const px = x * tileSize - camX;
+      const py = y * tileSize - camY;
+      const terrainName = TERRAIN_NAMES[tile[0]];
+      const sprite = sprites[terrainName];
 
-  // Visible tile range
-  const topLeft = screenToWorld(0, 0);
-  const botRight = screenToWorld(canvas.width, canvas.height);
-  const minTX = Math.max(0, Math.floor(topLeft.x / TILE_SIZE) - 1);
-  const minTY = Math.max(0, Math.floor(topLeft.y / TILE_SIZE) - 1);
-  const maxTX = Math.min(GRID - 1, Math.ceil(botRight.x / TILE_SIZE));
-  const maxTY = Math.min(GRID - 1, Math.ceil(botRight.y / TILE_SIZE));
+      if (sprite && tileSize >= 8) {
+        ctx.drawImage(sprite, px, py, tileSize, tileSize);
+      } else {
+        ctx.fillStyle = TERRAIN_COLORS[terrainName] || '#111';
+        ctx.fillRect(px, py, tileSize, tileSize);
+      }
 
-  // Time-of-day tint
-  let tint = null;
-  if (state.worldState) {
-    const tod = state.worldState.timeOfDay;
-    if (tod === 'night') tint = 'rgba(10, 10, 40, 0.45)';
-    else if (tod === 'dawn') tint = 'rgba(60, 30, 10, 0.15)';
-    else if (tod === 'dusk') tint = 'rgba(50, 20, 20, 0.2)';
-  }
-
-  // Draw tiles (packed format: [terrain_id, elevation, resource_id, fertility])
-  if (tiles) {
-    for (let ty = minTY; ty <= maxTY; ty++) {
-      for (let tx = minTX; tx <= maxTX; tx++) {
-        const idx = ty * GRID + tx;
-        const t = tiles[idx];
-        if (!t) continue;
-
-        const terrainName = TERRAIN_NAMES[t[0]] || 'grass';
-        const resourceId = t[2];
-        const sp = worldToScreen(tx * TILE_SIZE, ty * TILE_SIZE);
-
-        if (sprites[terrainName]) {
-          ctx.drawImage(sprites[terrainName], sp.x, sp.y, ts, ts);
+      // Resource overlay
+      const resIdx = tile[2];
+      if (resIdx > 0 && tileSize >= 16) {
+        const resName = RESOURCE_NAMES[resIdx] + '_res';
+        const resSprite = sprites[resName];
+        if (resSprite) {
+          const rSize = Math.max(8, tileSize * 0.4);
+          ctx.drawImage(resSprite, px + (tileSize - rSize) / 2, py + (tileSize - rSize) / 2, rSize, rSize);
         } else {
-          ctx.fillStyle = TERRAIN_COLORS[terrainName] || '#333';
-          ctx.fillRect(sp.x, sp.y, ts, ts);
-        }
-
-        // Resource indicator
-        if (resourceId > 0 && camera.zoom >= 0.6) {
-          ctx.fillStyle = 'rgba(255,255,100,0.4)';
+          ctx.fillStyle = 'rgba(255,255,255,0.15)';
           ctx.beginPath();
-          ctx.arc(sp.x + ts - 6 * camera.zoom, sp.y + 6 * camera.zoom, 3 * camera.zoom, 0, Math.PI * 2);
+          ctx.arc(px + tileSize/2, py + tileSize/2, 2, 0, Math.PI * 2);
           ctx.fill();
         }
+      }
 
-        // Grid line (only when zoomed in)
-        if (camera.zoom >= 1.2) {
-          ctx.strokeStyle = 'rgba(255,255,255,0.04)';
-          ctx.strokeRect(sp.x, sp.y, ts, ts);
+      // Density/gravity visualization (subtle glow overlay)
+      if (tileSize >= 12) {
+        const density = tile[4] / 100;
+        const osc = tile[6] / 100;
+        if (density > 0.5) {
+          ctx.fillStyle = `rgba(34, 170, 136, ${(density - 0.5) * 0.15})`;
+          ctx.fillRect(px, py, tileSize, tileSize);
+        }
+        if (osc > 0.3) {
+          const flicker = Math.sin(Date.now() * 0.003 + x * 0.5 + y * 0.7) * 0.5 + 0.5;
+          ctx.fillStyle = `rgba(204, 136, 51, ${(osc - 0.3) * 0.12 * flicker})`;
+          ctx.fillRect(px, py, tileSize, tileSize);
+        }
+
+        // Phantom density visualization (shimmering purple-pink, deceptive)
+        const phantom = tile[10] / 100;
+        if (phantom > 0.1) {
+          const shimmer = Math.sin(Date.now() * 0.005 + x * 1.2 + y * 0.8) * 0.5 + 0.5;
+          ctx.fillStyle = `rgba(153, 119, 170, ${(phantom - 0.1) * 0.2 * shimmer})`;
+          ctx.fillRect(px, py, tileSize, tileSize);
+        }
+
+        // Trace visualization (faint colored dots showing where entities have been)
+        const traceType = tile[8];
+        const traceFresh = tile[9];
+        if (traceType >= 0 && traceFresh > 0) {
+          const traceColors = ['#44ccdd', '#aa66cc', '#ccaa44', '#cc5544', '#88ddaa', '#dd88ff'];
+          const alpha = Math.min(0.25, traceFresh / 8 * 0.25);
+          ctx.fillStyle = traceColors[traceType] || '#666';
+          ctx.globalAlpha = alpha;
+          ctx.fillRect(px + tileSize * 0.3, py + tileSize * 0.3, tileSize * 0.4, tileSize * 0.4);
+          ctx.globalAlpha = 1;
         }
       }
     }
   }
 
-  // Time tint
-  if (tint) {
-    ctx.fillStyle = tint;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-  }
-
   // Draw structures
   if (state.structures) {
     for (const s of state.structures) {
-      const sp = worldToScreen(s.x * TILE_SIZE + TILE_SIZE * 0.1, s.y * TILE_SIZE + TILE_SIZE * 0.1);
-      const ss = ts * 0.8;
+      const px = s.x * tileSize - camX;
+      const py = s.y * tileSize - camY;
+      if (px < -tileSize || px > w || py < -tileSize || py > h) continue;
 
-      if (sprites[s.structureType]) {
-        ctx.drawImage(sprites[s.structureType], sp.x, sp.y, ss, ss);
+      const spriteName = s.structureType + '_struct';
+      const sprite = sprites[spriteName];
+      if (sprite) {
+        ctx.drawImage(sprite, px, py, tileSize, tileSize);
       } else {
-        ctx.fillStyle = STRUCTURE_COLORS[s.structureType] || '#888';
-        ctx.globalAlpha = 0.8;
-        ctx.fillRect(sp.x, sp.y, ss, ss);
-        ctx.globalAlpha = 1;
+        ctx.strokeStyle = '#6688aa';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(px + 4, py + 4, tileSize - 8, tileSize - 8);
       }
+    }
+  }
 
-      // Durability bar
-      if (camera.zoom >= 0.6) {
-        const maxDur = { campfire: 50, tower: 200, bridge: 150, shrine: 300, wall: 250, garden: 80 }[s.structureType] || 100;
-        const pct = s.durability / maxDur;
-        const bw = ss * 0.8;
-        const bx = sp.x + (ss - bw) / 2;
-        const by = sp.y - 4 * camera.zoom;
-        ctx.fillStyle = 'rgba(0,0,0,0.5)';
-        ctx.fillRect(bx, by, bw, 3 * camera.zoom);
-        ctx.fillStyle = pct > 0.5 ? '#44aa66' : pct > 0.2 ? '#ccaa44' : '#cc4444';
-        ctx.fillRect(bx, by, bw * pct, 3 * camera.zoom);
+  // Draw signal waves (expanding circles)
+  if (state.waves && state.waves.length > 0) {
+    for (const wave of state.waves) {
+      const px = wave.x * tileSize - camX;
+      const py = wave.y * tileSize - camY;
+      const r = wave.radius * tileSize;
+      const amp = wave.amplitude;
+      if (amp <= 0) continue;
+
+      // Wave circle: purple-white ring that fades with amplitude
+      const pulse = Math.sin(Date.now() * 0.004 + wave.id) * 0.3 + 0.7;
+      ctx.beginPath();
+      ctx.arc(px, py, r, 0, Math.PI * 2);
+      ctx.strokeStyle = `rgba(221, 136, 255, ${amp * 0.6 * pulse})`;
+      ctx.lineWidth = Math.max(1, 2 * zoom * amp);
+      ctx.stroke();
+
+      // Inner glow ring
+      ctx.beginPath();
+      ctx.arc(px, py, r * 0.95, 0, Math.PI * 2);
+      ctx.strokeStyle = `rgba(255, 200, 255, ${amp * 0.3 * pulse})`;
+      ctx.lineWidth = Math.max(0.5, 1 * zoom * amp);
+      ctx.stroke();
+
+      // Origin dot
+      if (r < 200) {
+        ctx.beginPath();
+        ctx.arc(px, py, 3 * zoom, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(221, 136, 255, ${amp * 0.8})`;
+        ctx.fill();
       }
     }
   }
 
   // Draw entities
   if (state.entities) {
-    for (const ent of state.entities) {
-      const sp = worldToScreen(ent.x * TILE_SIZE + TILE_SIZE * 0.15, ent.y * TILE_SIZE + TILE_SIZE * 0.15);
-      const es = ts * 0.7;
+    for (const e of state.entities) {
+      const px = e.x * tileSize - camX;
+      const py = e.y * tileSize - camY;
+      if (px < -tileSize || px > w || py < -tileSize || py > h) continue;
 
-      if (sprites[ent.entityType]) {
-        ctx.drawImage(sprites[ent.entityType], sp.x, sp.y, es, es);
+      const sprite = sprites[e.entityType];
+      const eSize = Math.max(tileSize * 0.8, 8);
+      const offset = (tileSize - eSize) / 2;
+
+      if (sprite) {
+        ctx.drawImage(sprite, px + offset, py + offset, eSize, eSize);
       } else {
-        ctx.fillStyle = ENTITY_COLORS[ent.entityType] || '#fff';
+        ctx.fillStyle = ENTITY_COLORS[e.entityType] || '#fff';
         ctx.beginPath();
-        ctx.arc(sp.x + es / 2, sp.y + es / 2, es / 2.5, 0, Math.PI * 2);
+        ctx.arc(px + tileSize/2, py + tileSize/2, eSize/3, 0, Math.PI * 2);
         ctx.fill();
       }
 
-      // Selected highlight
-      if (ent.id === selectedEntityId) {
-        ctx.strokeStyle = '#ffcc44';
+      // Entity glow
+      const glowColor = ENTITY_COLORS[e.entityType] || '#fff';
+      ctx.shadowColor = glowColor;
+      ctx.shadowBlur = 8 * zoom;
+      ctx.fillStyle = 'transparent';
+      ctx.fillRect(px, py, 1, 1);
+      ctx.shadowBlur = 0;
+
+      // Name label at zoom
+      if (tileSize >= 24) {
+        ctx.fillStyle = 'rgba(0,0,0,0.6)';
+        ctx.font = `${Math.max(8, tileSize * 0.25)}px 'JetBrains Mono'`;
+        const nameWidth = ctx.measureText(e.name).width;
+        ctx.fillRect(px + (tileSize - nameWidth) / 2 - 2, py - 10, nameWidth + 4, 10);
+        ctx.fillStyle = glowColor;
+        ctx.fillText(e.name, px + (tileSize - nameWidth) / 2, py - 2);
+      }
+
+      // Selected entity highlight
+      if (selectedEntity === e.id) {
+        ctx.strokeStyle = glowColor;
         ctx.lineWidth = 2;
-        ctx.strokeRect(sp.x - 2, sp.y - 2, es + 4, es + 4);
-        ctx.lineWidth = 1;
-      }
-
-      // Name label
-      if (camera.zoom >= 0.8) {
-        ctx.font = `${Math.max(8, 10 * camera.zoom)}px monospace`;
-        ctx.fillStyle = 'rgba(255,255,255,0.7)';
-        ctx.textAlign = 'center';
-        const shortName = ent.name.split(' ')[0];
-        ctx.fillText(shortName, sp.x + es / 2, sp.y - 4 * camera.zoom);
-        ctx.textAlign = 'left';
-      }
-
-      // Energy bar
-      if (camera.zoom >= 0.6) {
-        const bw = es * 0.8;
-        const bx = sp.x + (es - bw) / 2;
-        const by = sp.y + es + 2 * camera.zoom;
-        ctx.fillStyle = 'rgba(0,0,0,0.5)';
-        ctx.fillRect(bx, by, bw, 2 * camera.zoom);
-        ctx.fillStyle = ent.energy > 50 ? '#44cc66' : ent.energy > 20 ? '#ccaa44' : '#cc4444';
-        ctx.fillRect(bx, by, bw * (ent.energy / 100), 2 * camera.zoom);
+        ctx.setLineDash([3, 3]);
+        ctx.strokeRect(px - 2, py - 2, tileSize + 4, tileSize + 4);
+        ctx.setLineDash([]);
       }
     }
   }
 
-  // Render minimap
-  renderMinimap();
+  // Hover tooltip
+  if (hoveredTile && tiles) {
+    const idx = hoveredTile.y * GRID + hoveredTile.x;
+    const tile = tiles[idx];
+    if (tile) {
+      const tooltip = document.getElementById('tooltip');
+      const terrainName = TERRAIN_NAMES[tile[0]];
+      const resName = RESOURCE_NAMES[tile[2]];
+      const gravity = tile[3];
+      const density = tile[4];
+      const resonance = tile[5];
+      const oscillation = tile[6];
+      const coherence = tile[7];
+
+      const traceIdx = tile[8];
+      const traceFresh = tile[9];
+      const phantom = tile[10];
+      const witnessed = tile[11];
+      const traceNames = ['seeker', 'weaver', 'anchor', 'dissolvent', 'witness', 'herald', 'oracle'];
+
+      tooltip.innerHTML = `
+        <div class="tt-terrain" style="color: ${TERRAIN_COLORS[terrainName]}">${terrainName}</div>
+        <div class="tt-row"><span>(${hoveredTile.x}, ${hoveredTile.y})</span><span class="tt-val">elev ${tile[1]}</span></div>
+        ${resName !== 'none' ? `<div class="tt-row"><span>resource</span><span class="tt-val">${resName}</span></div>` : ''}
+        <div class="tt-row"><span>gravity</span><span class="tt-val">${(gravity/100).toFixed(2)}</span></div>
+        <div class="tt-row"><span>density</span><span class="tt-val">${(density/100).toFixed(2)}</span></div>
+        <div class="tt-row"><span>resonance</span><span class="tt-val">${(resonance/100).toFixed(2)}</span></div>
+        ${oscillation > 0 ? `<div class="tt-row"><span>oscillation</span><span class="tt-val">${(oscillation/100).toFixed(2)}</span></div>` : ''}
+        <div class="tt-row"><span>coherence</span><span class="tt-val">${(coherence/100).toFixed(2)}</span></div>
+        ${phantom > 0 ? `<div class="tt-row"><span style="color:#997799">phantom</span><span class="tt-val" style="color:#997799">${(phantom/100).toFixed(2)}</span></div>` : ''}
+        ${traceIdx >= 0 && traceFresh > 0 ? `<div class="tt-row"><span>trace</span><span class="tt-val">${traceNames[traceIdx] || '?'} (${traceFresh})</span></div>` : ''}
+        ${witnessed > 0 ? `<div class="tt-row"><span style="color:#88ddaa">witnessed</span><span class="tt-val" style="color:#88ddaa">${witnessed}×</span></div>` : ''}
+      `;
+    }
+  }
+
+  // Animation frame for flux shimmer
+  requestAnimationFrame(draw);
 }
 
-function renderMinimap() {
-  if (!tiles) return;
-  const MM = 200;
-  minimapCtx.clearRect(0, 0, MM, MM);
+// ── Minimap ──
+function drawMinimap() {
+  if (!tiles || !minimapDirty) return;
+  minimapDirty = false;
+  const scale = 200 / GRID;
+  const imageData = mmCtx.createImageData(200, 200);
+  const d = imageData.data;
 
-  // For large grids, sample every Nth tile for minimap performance
-  const step = Math.max(1, Math.floor(GRID / MM));
-  const s = MM / GRID;
-  const blockSize = Math.max(1, Math.ceil(s * step));
+  const colorMap = {
+    0: [8, 8, 14],      // void
+    1: [24, 34, 102],    // basin
+    2: [68, 170, 204],   // ridge
+    3: [58, 58, 72],     // plateau
+    4: [22, 102, 85],    // depth
+    5: [136, 85, 34],    // flux
+    6: [170, 170, 204],  // crystal
+  };
 
-  for (let ty = 0; ty < GRID; ty += step) {
-    for (let tx = 0; tx < GRID; tx += step) {
-      const t = tiles[ty * GRID + tx];
-      if (!t) continue;
-      const terrainName = TERRAIN_NAMES[t[0]] || 'grass';
-      minimapCtx.fillStyle = TERRAIN_COLORS[terrainName] || '#333';
-      minimapCtx.fillRect(tx * s, ty * s, blockSize, blockSize);
+  for (let my = 0; my < 200; my++) {
+    for (let mx = 0; mx < 200; mx++) {
+      const tx = Math.floor(mx / scale);
+      const ty = Math.floor(my / scale);
+      const idx = ty * GRID + tx;
+      const tile = tiles[idx];
+      const terrainId = tile ? tile[0] : 0;
+      const c = colorMap[terrainId] || [0, 0, 0];
+      const pi = (my * 200 + mx) * 4;
+      d[pi] = c[0]; d[pi+1] = c[1]; d[pi+2] = c[2]; d[pi+3] = 255;
     }
   }
+  mmCtx.putImageData(imageData, 0, 0);
 
-  // Entities on minimap (draw as visible dots)
-  if (state && state.entities) {
-    for (const ent of state.entities) {
-      minimapCtx.fillStyle = ENTITY_COLORS[ent.entityType] || '#fff';
-      const dotSize = Math.max(2, s * 2);
-      minimapCtx.fillRect(ent.x * s - dotSize/2, ent.y * s - dotSize/2, dotSize, dotSize);
-    }
-  }
-
-  // Structures on minimap
-  if (state && state.structures) {
-    for (const st of state.structures) {
-      minimapCtx.fillStyle = STRUCTURE_COLORS[st.structureType] || '#888';
-      const dotSize = Math.max(2, s * 1.5);
-      minimapCtx.fillRect(st.x * s, st.y * s, dotSize, dotSize);
-    }
-  }
-
-  // Camera viewport
-  const vpTL = screenToWorld(0, 0);
-  const vpBR = screenToWorld(canvas.width, canvas.height);
-  minimapCtx.strokeStyle = 'rgba(255,255,255,0.5)';
-  minimapCtx.lineWidth = 1;
-  minimapCtx.strokeRect(
-    vpTL.x / TILE_SIZE * s,
-    vpTL.y / TILE_SIZE * s,
-    (vpBR.x - vpTL.x) / TILE_SIZE * s,
-    (vpBR.y - vpTL.y) / TILE_SIZE * s
-  );
-}
-
-function renderWeather() {
-  if (!state || !state.worldState) return;
-  weatherCtx.clearRect(0, 0, weatherCanvas.width, weatherCanvas.height);
-
-  const weather = state.worldState.weather;
-  if (weather === 'rain') {
-    for (let i = 0; i < 120; i++) {
-      const rx = Math.random() * weatherCanvas.width;
-      const ry = Math.random() * weatherCanvas.height;
-      weatherCtx.strokeStyle = 'rgba(140,160,220,0.3)';
-      weatherCtx.beginPath();
-      weatherCtx.moveTo(rx, ry);
-      weatherCtx.lineTo(rx - 1, ry + 8);
-      weatherCtx.stroke();
-    }
-  } else if (weather === 'fog') {
-    weatherCtx.fillStyle = 'rgba(180,180,200,0.12)';
-    weatherCtx.fillRect(0, 0, weatherCanvas.width, weatherCanvas.height);
-  } else if (weather === 'storm') {
-    for (let i = 0; i < 200; i++) {
-      const rx = Math.random() * weatherCanvas.width;
-      const ry = Math.random() * weatherCanvas.height;
-      weatherCtx.strokeStyle = 'rgba(160,180,255,0.4)';
-      weatherCtx.beginPath();
-      weatherCtx.moveTo(rx, ry);
-      weatherCtx.lineTo(rx - 3, ry + 14);
-      weatherCtx.stroke();
-    }
-    if (Math.random() < 0.03) {
-      weatherCtx.fillStyle = 'rgba(255,255,255,0.08)';
-      weatherCtx.fillRect(0, 0, weatherCanvas.width, weatherCanvas.height);
+  // Draw entity dots
+  if (state.entities) {
+    for (const e of state.entities) {
+      const ex = Math.floor(e.x * scale);
+      const ey = Math.floor(e.y * scale);
+      mmCtx.fillStyle = ENTITY_COLORS[e.entityType] || '#fff';
+      mmCtx.fillRect(ex - 1, ey - 1, 3, 3);
     }
   }
 }
 
-// ===================== UI UPDATES =====================
+// ── UI Updates ──
 function updateUI() {
-  if (!state) return;
+  const ws = state.worldState || {};
 
-  const ws = state.worldState;
-  document.getElementById('info-tick').textContent = ws.tick;
-  document.getElementById('info-epoch').textContent = ws.epoch;
-  document.getElementById('info-season').textContent = ws.season;
-  document.getElementById('info-time').textContent = ws.timeOfDay;
-  document.getElementById('info-weather').textContent = ws.weather;
-  document.getElementById('info-pop').textContent = state.entities ? state.entities.length : 0;
+  document.getElementById('val-tick').textContent = ws.tick || 0;
+  document.getElementById('val-phase').textContent = ws.phase || '—';
+  document.getElementById('val-coherence').textContent = (ws.coherence || 0).toFixed(3);
+  document.getElementById('val-entropy').textContent = (ws.entropy || 0).toFixed(3);
+  document.getElementById('val-epoch').textContent = ws.epoch || 0;
+  document.getElementById('val-entities').textContent = (state.entities || []).length;
 
-  // Season color
-  const seasonEl = document.getElementById('info-season');
-  const seasonColors = { spring: '#66cc88', summer: '#ccaa44', autumn: '#cc8844', winter: '#88aacc' };
-  seasonEl.style.color = seasonColors[ws.season] || '#c8c8f0';
+  // Phase chip color
+  const phaseChip = document.getElementById('chip-phase');
+  phaseChip.className = 'chip phase-' + (ws.phase || 'quiescence');
 
-  // Weather color
-  const weatherEl = document.getElementById('info-weather');
-  const weatherColors = { clear: '#aaaadd', rain: '#6699cc', fog: '#9999aa', storm: '#cc6688' };
-  weatherEl.style.color = weatherColors[ws.weather] || '#c8c8f0';
+  // Metrics
+  const metricsEl = document.getElementById('metrics');
+  metricsEl.innerHTML = `
+    <div class="metric"><span class="ml">signals</span><span class="mv">${ws.totalSignalProcessed || 0}</span></div>
+    <div class="metric"><span class="ml">connections</span><span class="mv">${ws.totalConnectionsMade || 0}</span></div>
+    <div class="metric"><span class="ml">dissolutions</span><span class="mv">${ws.totalDissolutions || 0}</span></div>
+    <div class="metric"><span class="ml">attractors</span><span class="mv">${ws.gravityWells || 0}</span></div>
+    <div class="metric"><span class="ml" style="color:#dd88ff">waves</span><span class="mv" style="color:#dd88ff">${ws.totalWavesPropagated || 0}</span></div>
+    <div class="metric"><span class="ml">dialogues</span><span class="mv">${ws.totalDialogues || 0}</span></div>
+  `;
 
   // Entity list
   const listEl = document.getElementById('entity-list');
-  if (state.entities) {
-    listEl.innerHTML = state.entities.map(ent => `
-      <div class="entity-row ${ent.id === selectedEntityId ? 'selected' : ''}" data-id="${ent.id}">
-        <div class="entity-icon" style="background:${ENTITY_COLORS[ent.entityType] || '#888'};border-radius:50%;"></div>
-        <span class="entity-name">${ent.name}</span>
-        <span class="entity-state ${ent.state}">${ent.state}</span>
+  listEl.innerHTML = (state.entities || []).map(e => `
+    <div class="entity-card" data-id="${e.id}" onclick="selectEntity(${e.id})">
+      <span class="ename">${e.name}</span>
+      <span class="etype">${e.entityType}</span>
+      <span class="estate estate-${e.state}">${e.state}</span>
+      <div class="edetail">
+        (${e.x}, ${e.y}) · energy ${Math.round(e.energy)}
+        ${e.signalCarried ? ' · signal ' + Math.round(e.signalCarried) : ''}
+        ${e.conviction ? ' · conv ' + e.conviction.toFixed(2) : ''}
+        ${e.hollowness ? ' · <span style="color:#ffd700">hollow ' + (e.hollowness * 100).toFixed(0) + '%</span>' : ''}
+        ${e.dissonance ? ' · <span style="color:#ff8844">diss ' + (e.dissonance * 100).toFixed(0) + '%</span>' : ''}
+        ${e.pronouncements ? ' · pron ' + e.pronouncements : ''}
+        ${e.connections ? ' · conn ' + e.connections : ''}
+        ${e.dissolutions ? ' · diss ' + e.dissolutions : ''}
+        ${e.anchored ? ' · anch ' + e.anchored : ''}
+        ${e.foreignMemory && e.foreignMemory.length ? ' · mem ' + e.foreignMemory.length : ''}
       </div>
-    `).join('');
-
-    listEl.querySelectorAll('.entity-row').forEach(row => {
-      row.addEventListener('click', () => {
-        const id = parseInt(row.dataset.id);
-        selectedEntityId = id === selectedEntityId ? null : id;
-        if (selectedEntityId) {
-          const ent = state.entities.find(e => e.id === selectedEntityId);
-          if (ent) {
-            camera.x = ent.x * TILE_SIZE + TILE_SIZE / 2;
-            camera.y = ent.y * TILE_SIZE + TILE_SIZE / 2;
-          }
-        }
-        updateUI();
-        render();
-      });
-    });
-  }
+    </div>
+  `).join('');
 
   // Event log
-  const logEl = document.getElementById('event-log');
-  if (state.eventLog) {
-    const events = state.eventLog.slice(-40).reverse();
-    logEl.innerHTML = events.map(ev => `
-      <div class="event-entry ${ev.eventType}">
-        <span class="tick-num">[${ev.tick}]</span> ${ev.message}
-      </div>
-    `).join('');
+  const logEl = document.getElementById('log-list');
+  const events = (state.eventLog || []).slice().reverse();
+  logEl.innerHTML = events.map(ev => `
+    <div class="ev ev-${ev.eventType}">
+      <span class="et">t${ev.tick}</span>${ev.message}
+    </div>
+  `).join('');
+
+  minimapDirty = true;
+  drawMinimap();
+}
+
+// Terrain census from tiles data
+function updateTerrainCensus() {
+  if (!tiles) return;
+  const counts = {};
+  for (const t of tiles) {
+    const name = TERRAIN_NAMES[t[0]];
+    counts[name] = (counts[name] || 0) + 1;
+  }
+  const total = tiles.length;
+  const bar = document.getElementById('terrain-bar');
+  const labels = document.getElementById('terrain-labels');
+  bar.innerHTML = TERRAIN_NAMES.map(name => {
+    const pct = ((counts[name] || 0) / total * 100);
+    if (pct < 0.1) return '';
+    return `<div class="terrain-seg tc-${name}" style="width:${pct}%" data-label="${name} ${pct.toFixed(1)}%"></div>`;
+  }).join('');
+  labels.innerHTML = TERRAIN_NAMES.map(name => {
+    const count = counts[name] || 0;
+    if (count === 0) return '';
+    return `<span style="color:${TERRAIN_COLORS[name]};margin-right:8px;font-size:9px">${name} ${(count/total*100).toFixed(1)}%</span>`;
+  }).join('');
+}
+
+// ── Interaction ──
+function selectEntity(id) {
+  selectedEntity = id;
+  const e = (state.entities || []).find(e => e.id === id);
+  if (e) {
+    const tileSize = Math.floor(TILE * zoom);
+    camX = e.x * tileSize - canvas.width / 2;
+    camY = e.y * tileSize - canvas.height / 2;
   }
 }
 
-// ===================== INTERACTION =====================
 const wrap = document.getElementById('canvas-wrap');
 
 wrap.addEventListener('mousedown', (e) => {
   dragging = true;
-  dragStart = { x: e.clientX, y: e.clientY };
-  camStart = { x: camera.x, y: camera.y };
+  dragStartX = e.clientX + camX;
+  dragStartY = e.clientY + camY;
 });
 
-window.addEventListener('mousemove', (e) => {
-  if (!dragging) return;
-  camera.x = camStart.x - (e.clientX - dragStart.x) / camera.zoom;
-  camera.y = camStart.y - (e.clientY - dragStart.y) / camera.zoom;
-  render();
-});
-
-window.addEventListener('mouseup', () => { dragging = false; });
-
-wrap.addEventListener('wheel', (e) => {
-  e.preventDefault();
-  const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
-  camera.zoom = Math.max(0.3, Math.min(4, camera.zoom * zoomFactor));
-  render();
-}, { passive: false });
-
-// Minimap click
-minimapCanvas.addEventListener('click', (e) => {
-  const rect = minimapCanvas.getBoundingClientRect();
-  const mx = (e.clientX - rect.left) / 200 * GRID;
-  const my = (e.clientY - rect.top) / 200 * GRID;
-  camera.x = mx * TILE_SIZE;
-  camera.y = my * TILE_SIZE;
-  render();
-});
-
-// Tooltip on hover
 wrap.addEventListener('mousemove', (e) => {
-  if (dragging || !state) return;
+  if (dragging) {
+    camX = dragStartX - e.clientX;
+    camY = dragStartY - e.clientY;
+  }
+
+  // Tile hover
   const rect = canvas.getBoundingClientRect();
-  const world = screenToWorld(e.clientX - rect.left, e.clientY - rect.top);
-  const tx = Math.floor(world.x / TILE_SIZE);
-  const ty = Math.floor(world.y / TILE_SIZE);
+  const mx = e.clientX - rect.left;
+  const my = e.clientY - rect.top;
+  const tileSize = Math.floor(TILE * zoom);
+  const tx = Math.floor((mx + camX) / tileSize);
+  const ty = Math.floor((my + camY) / tileSize);
 
-  if (tx < 0 || tx >= GRID || ty < 0 || ty >= GRID) {
-    document.getElementById('tooltip').style.display = 'none';
-    return;
-  }
-
-  const tileData = tiles ? tiles[ty * GRID + tx] : null;
-  const tooltip = document.getElementById('tooltip');
-
-  // Check for entity at this tile
-  const ent = state.entities?.find(e => e.x === tx && e.y === ty);
-  const struct = state.structures?.find(s => s.x === tx && s.y === ty);
-
-  let title = '';
-  let body = '';
-
-  if (ent) {
-    title = ent.name;
-    body = `<div class="tt-row">Type: <span class="tt-val">${ent.entityType}</span></div>
-            <div class="tt-row">State: <span class="tt-val">${ent.state}</span></div>
-            <div class="tt-row">HP: <span class="tt-val">${ent.hp}</span> Energy: <span class="tt-val">${ent.energy}</span></div>`;
-    const inv = typeof ent.inventory === 'string' ? JSON.parse(ent.inventory || '{}') : (ent.inventory || {});
-    const items = Object.entries(inv).filter(([,v]) => v > 0);
-    if (items.length > 0) {
-      body += `<div class="tt-row">Inv: <span class="tt-val">${items.map(([k,v]) => `${k}:${v}`).join(', ')}</span></div>`;
-    }
-  } else if (struct) {
-    title = struct.structureType;
-    body = `<div class="tt-row">Durability: <span class="tt-val">${struct.durability}</span></div>`;
-  } else if (tileData) {
-    const terrainName = TERRAIN_NAMES[tileData[0]] || 'unknown';
-    const resourceName = RESOURCE_NAMES[tileData[2]] || 'none';
-    title = `(${tx}, ${ty}) ${terrainName}`;
-    body = `<div class="tt-row">Elev: <span class="tt-val">${tileData[1]}</span> Fertile: <span class="tt-val">${tileData[3]}</span></div>`;
-    if (tileData[2] > 0) {
-      body += `<div class="tt-row">Resource: <span class="tt-val">${resourceName}</span></div>`;
-    }
-  }
-
-  if (title) {
-    tooltip.querySelector('.tt-title').textContent = title;
-    tooltip.querySelector('.tt-body').innerHTML = body;
+  if (tx >= 0 && tx < GRID && ty >= 0 && ty < GRID) {
+    hoveredTile = { x: tx, y: ty };
+    const tooltip = document.getElementById('tooltip');
     tooltip.style.display = 'block';
-    tooltip.style.left = (e.clientX + 14) + 'px';
-    tooltip.style.top = (e.clientY + 14) + 'px';
+    tooltip.style.left = (e.clientX + 12) + 'px';
+    tooltip.style.top = (e.clientY + 12) + 'px';
   } else {
-    tooltip.style.display = 'none';
+    hoveredTile = null;
+    document.getElementById('tooltip').style.display = 'none';
   }
 });
 
+wrap.addEventListener('mouseup', () => { dragging = false; });
 wrap.addEventListener('mouseleave', () => {
+  dragging = false;
+  hoveredTile = null;
   document.getElementById('tooltip').style.display = 'none';
 });
 
-// ===================== WEBSOCKET =====================
-let ws = null;
-let reconnectTimer = null;
+wrap.addEventListener('wheel', (e) => {
+  e.preventDefault();
+  const oldZoom = zoom;
+  const delta = e.deltaY > 0 ? 0.9 : 1.1;
+  zoom = Math.max(0.1, Math.min(4, zoom * delta));
 
-function connect() {
-  const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
-  ws = new WebSocket(`${proto}//${location.host}`);
+  // Zoom toward mouse
+  const rect = canvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left;
+  const my = e.clientY - rect.top;
+  camX = (camX + mx) * (zoom / oldZoom) - mx;
+  camY = (camY + my) * (zoom / oldZoom) - my;
+});
 
-  ws.onopen = () => {
-    document.getElementById('conn-status').textContent = 'connected';
-    document.getElementById('conn-status').className = 'connected';
-    if (reconnectTimer) { clearInterval(reconnectTimer); reconnectTimer = null; }
-  };
+// Minimap click
+mmCanvas.addEventListener('click', (e) => {
+  const rect = mmCanvas.getBoundingClientRect();
+  const mx = (e.clientX - rect.left) / 200;
+  const my = (e.clientY - rect.top) / 200;
+  const tileSize = Math.floor(TILE * zoom);
+  camX = mx * GRID * tileSize - canvas.width / 2;
+  camY = my * GRID * tileSize - canvas.height / 2;
+});
 
-  ws.onmessage = (e) => {
-    try {
-      const msg = JSON.parse(e.data);
-      if (msg.type === 'state') {
-        state = msg.data;
-        // Tiles loaded separately via REST
-        if (!tiles) fetchTiles();
-        else { centerCamera(); updateUI(); render(); }
-      } else if (msg.type === 'update') {
-        if (msg.data.worldState) state.worldState = msg.data.worldState;
-        if (msg.data.entities) state.entities = msg.data.entities;
-        if (msg.data.structures) state.structures = msg.data.structures;
-        if (msg.data.eventLog) state.eventLog = msg.data.eventLog;
-        updateUI();
-        render();
-        renderWeather();
-      }
-    } catch (err) {
-      console.error('WS parse error:', err);
-    }
-  };
+// ── Init ──
+(async () => {
+  await loadAllSprites();
+  resize();
+  await fetchTiles();
+  await fetchState();
+  updateTerrainCensus();
+  connectWS();
+  // Center camera on middle of world
+  const tileSize = Math.floor(TILE * zoom);
+  camX = (GRID / 2) * tileSize - canvas.width / 2;
+  camY = (GRID / 2) * tileSize - canvas.height / 2;
+  draw();
 
-  ws.onclose = () => {
-    document.getElementById('conn-status').textContent = 'disconnected';
-    document.getElementById('conn-status').className = 'disconnected';
-    if (!reconnectTimer) {
-      reconnectTimer = setInterval(() => connect(), 3000);
-    }
-  };
-
-  ws.onerror = () => ws.close();
-}
-
-function centerCamera() {
-  camera.x = WORLD_PX / 2;
-  camera.y = WORLD_PX / 2;
-  // Fit grid in view
-  const wrap = document.getElementById('canvas-wrap');
-  const minDim = Math.min(wrap.clientWidth, wrap.clientHeight);
-  camera.zoom = minDim / WORLD_PX * 0.9;
-}
-
-// ===================== WEATHER ANIMATION =====================
-let weatherFrame = 0;
-function weatherLoop() {
-  weatherFrame++;
-  if (weatherFrame % 6 === 0) renderWeather();
-  requestAnimationFrame(weatherLoop);
-}
-
-// ===================== TILE LOADING =====================
-function fetchTiles() {
-  const loading = document.getElementById('conn-status');
-  loading.textContent = 'loading tiles...';
-  loading.className = 'disconnected';
-
-  fetch('/api/tiles').then(r => r.json()).then(data => {
-    tiles = data.tiles;
-    loading.textContent = 'connected';
-    loading.className = 'connected';
-    centerCamera();
-    updateUI();
-    render();
-    console.log(`Loaded ${tiles.length} tiles (${data.grid}x${data.grid})`);
-  }).catch(err => {
-    console.error('Failed to load tiles:', err);
-    loading.textContent = 'tile load failed';
-  });
-}
-
-// ===================== INIT =====================
-window.addEventListener('resize', resizeCanvas);
-resizeCanvas();
-loadSprites();
-connect();
-weatherLoop();
-
-// Fetch initial state via REST as fallback
-fetch('/api/state').then(r => r.json()).then(data => {
-  if (!state) {
-    state = data;
-    fetchTiles();
-  }
-}).catch(() => {});
+  // Periodically refresh tiles (they change from events/entities)
+  setInterval(async () => {
+    await fetchTiles();
+    updateTerrainCensus();
+  }, 15000);
+})();
 </script>
 </body>
 </html>

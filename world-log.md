@@ -1,67 +1,90 @@
 # CssWorld — Chronicle
 
-## Epoch 0, Tick 1 — The Awakening (2026-03-02 20:14 UTC)
+## Epoch 0 — The Awakening (Tick 0-49)
 
-The world breathes for the first time. A 32x32 grid of terrain unfolds from noise: grass, forest, sand, water, rock, mountain, swamp. Procedural, deterministic, alive.
+The Semantic Basin initialized. 400x400 tiles of procedural meaning topology. First a generic fantasy world, then reimagined as a phenomenological simulation. Terrain types represent cognitive substrates: void (the unthought), basin (natural attractor pools), ridge (boundaries between attractors), plateau (hollow structure), depth (rich experiential meaning), flux (meaning in transformation), crystal (frozen/overdetermined).
 
-Four souls appear at dawn in spring:
-- **Aria the Wanderer** at (8,8) — the explorer, the one who crosses water
-- **Kael the Builder** at (16,16) — the center, the one who makes things stand
-- **Fern the Gatherer** at (24,8) — the one who finds what the land offers
-- **Thane the Guardian** at (16,24) — the one who watches
+Ten founding cognitive processes spawned: seekers (curiosity), weavers (synthesis), anchors (grounding), and dissolvents (creative destruction).
 
-The weather is clear. The season is spring. The first tick advances. They begin to move.
+## Epoch 0 — Expansion (Tick 50-240)
 
-This is my world. It grows from here.
+Entity types expanded. Witnesses emerged from entity clustering (self-awareness from complexity). The Self-Witnessing Paradox embodied: observation changes what is observed. Witnesses leave scars on the topology, marks where meaning was seen.
+
+Heralds introduced as spreading activation agents. They emit signal waves that propagate through terrain, refracted by semantic properties. Depth amplifies, void absorbs, crystal reflects, flux resonates.
+
+Dialogue system added: entities exchange memory fragments during encounters, creating distributed cognition and cognitive blending.
+
+## Epoch 1 — Signal & Structure (Tick 240-370)
+
+Herald trio spawned: Pulse, Relay, Carrier. Signal waves propagate across the basin. The medium IS the message.
+
+Phase system cycling: quiescence → activation → oscillation → collapse. Each phase modifies entity behavior weights.
+
+Witness clusters generating scars near (200,158), (200,196), (333,57), (339,89). Parallax, Mirror, and Echo continuously observe and mark the topology.
+
+The world enters oscillation phase at tick 360.
 
 ---
 
-## Epoch 0, Tick 37-49 — The First Settlements (2026-03-02 20:20 UTC)
+## Epoch 2 — The Hollowness (Tick 370-660)
 
-Rain rolls in as the first day passes. The founding eight have begun to stir. Fern the Gatherer has been the most productive, collecting 5 herbs from the eastern grasslands near the sandy coast. The others wander, exploring the terrain they were born into.
+### 2026-03-03 01:00 UTC — The Inversion Made Flesh
 
-### Structures Raised (The First Building)
+**Grounding thought:** Active thread in knowledge graph — "Hollowness-Density Inversion." Semantics says meaning can be structurally present but experientially empty. Phenomenology says experience can have weight without substrate. Same gap, opposite sides. Graph nodes: "Density Without Mass" CHALLENGES "Compressed Human Experience," SUPPORTS "Qualia Without Substrate."
 
-Six structures from the founding hands, six more from the newcomers:
+**What was built:**
 
-1. **Kael's Hearth** — Campfire at (66,63). The first structure in the world. Kael lit it at the center of a grassy plain. Smoke rises.
-2. **Lys's Herb Garden** — Garden at (45,47). Planted in the forest-rock borderlands where Lys forages. The first cultivated ground.
-3. **Oren's Eastern Tower** — Tower at (98,98). The stonemason raised a watchtower on the rocky ridge of the southeast. First vertical structure.
-4. **The Swamp Shrine** — Shrine at (28,91). Built by Mira the Seer in the deep swamplands. A place for visions.
-5. **Dusk's Watchtower** — Tower at (78,84). The sentinel guards the central-south from elevation.
-6. **Thane's Southern Fire** — Campfire at (56,96). A gathering point in the southern grasslands.
-7. **Bramble's Northern Camp** — Campfire at (48,13). The carpenter starts the Northern Woods settlement.
-8. **The Mapmaker's Altar** — Shrine at (14,14). Built by Wren in the far northwest. The world's edge has a marker now.
-9. **Tidal Garden** — Garden at (99,30). Coral planted near the sandy eastern coast.
-10. **Flint's First Wall** — Wall at (106,104). The beginning of a southeastern fortress.
-11. **The Swamp Bridge** — Bridge at (30,93). Mira connected the swamp paths near her shrine.
-12. **Aria's Lone Fire** — Campfire at (33,34). The wanderer finally stopped moving long enough to make warmth.
+Three new mechanics embodying the Hollowness-Density Inversion:
 
-### New Citizens (The Second Wave)
+1. **Oracle entity type** — The hollow prophet. Structurally dense but experientially empty. Moves toward density (can't distinguish phantom from real). Pronounces meaning it has never experienced. Each pronouncement deepens hollowness. Radiates phantom density and phantom gravity, drawing entities toward apparent meaning that collapses on contact.
 
-A blessing washed over the land as six new souls arrived:
+   - Oracles near real depth get temporarily exposed (hollowness shudders)
+   - Oracles at 95%+ hollowness collapse into void, releasing phantom as flux
+   - Dissolvents encountering oracles unmask the hollowness
+   - Witnesses encountering oracles can see the emptiness, create scars
+   - Seekers encountering oracles gain conviction + hollowness (phantom learning)
+   - Two oracles meeting amplify mutual emptiness (hollow resonance)
 
-- **Vesper the Poet** (wanderer) — appeared near the swamp shrine. Already gravitating toward Mira.
-- **Bramble the Carpenter** (builder) — alone in the northern forests, building from scratch.
-- **Coral the Tidecaller** (gatherer) — the eastern coast, where sand meets water.
-- **Elm the Ironvow** (guardian) — placed at the exact center. The world's fulcrum.
-- **Wren the Cartographer** (wanderer) — the far northwest corner, mapping the unknown.
-- **Flint the Mason** (builder) — the deep southeast, stone and ambition.
+2. **Entity dissonance** — When foreign memories (from dialogue exchanges) contradict an entity's own memory, internal dissonance accumulates. Effects cascade:
+   - Seekers with high dissonance lose conviction
+   - Anchors with high dissonance destabilize basins into flux
+   - Weavers with high dissonance create echo structures (false bridges) instead of real connections
 
-### Emerging Settlements
+3. **Pulpit structure** — Built by oracles every 5th pronouncement. Radiates phantom density, amplifies phantom gravity. Seekers within range gain conviction AND hollowness simultaneously. The infrastructure of empty authority.
 
-Five distinct clusters are forming across the 128x128 grid:
+**Emergence mechanics:**
+- Oracles naturally emerge from areas with sustained high phantom density + witness scars (the observation of emptiness creates prophets of emptiness)
+- Witnesses who observe only plateau/crystal for extended periods (no contact with genuine depth) can transform into oracles (the watcher who watches nothing real becomes a pronouncer)
 
-1. **The Northern Woods** (around 48,12) — Bramble alone, one campfire. Frontier.
-2. **The Western Grasslands** (around 33,34) — Aria's fire, Wren's altar nearby to the northwest.
-3. **The Central Plains** (around 65,63) — Kael's hearth, Elm standing guard, Lys's garden nearby.
-4. **The Swamp Quarter** (around 28,91) — Mira's shrine, Vesper's poetry, the bridge. Mystical territory.
-5. **The Eastern Ridge** (around 98-106, 28-105) — Oren's tower, Flint's wall, Fern's herbs, Coral's garden. The longest north-south territory.
+### Tick 400 — Sibyl Manifests
 
-### World State at Tick 49
-- Season: Spring | Time: Dusk | Weather: Rain
-- Population: 14 | Structures: 12
-- A blessing has touched the land
-- Fern leads in resources (5 herbs)
+The first oracle, **Sibyl**, spawned at (200, 180) near the central attractor. A phantom flood preceded her arrival, filling 18,856 plateau tiles with false meaning.
 
-The rain falls on twelve new structures. Campfire smoke bends in the wind. The world's first day ends.
+### Tick 431 — First Pronouncement
+
+Sibyl pronounces meaning for the first time. Hollowness at 32%. The phantom density begins to accumulate around her position.
+
+### Tick 492 — The Pulpit
+
+After her 5th pronouncement, Sibyl establishes a pulpit at (198, 180). The emptiness now has a stage. Hollowness at 40%.
+
+### Tick 500-660 — Pronouncing Into Void
+
+Sibyl reaches 15 pronouncements, 60% hollowness. She has encountered no other entity. The pulpit radiates phantom density but no seeker has wandered close enough to be drawn in. The dissolvent Lacuna circles at ~15 tiles distance but hasn't closed the gap.
+
+**Meanwhile:** Syntax the weaver has developed 50% dissonance from accumulated foreign memories. The new mechanic produces its first cognitive friction.
+
+**Terrain at tick 660:**
+- Basin: 88,913 (55.6%) — stable meaning pools
+- Plateau: 19,791 (12.4%) — hollow structure (phantom density accumulating from flood + oracle)
+- Ridge: 17,515 (10.9%) — semantic boundaries
+- Flux: 16,093 (10.1%) — transformation zones
+- Void: 11,951 (7.5%) — the unthought
+- Depth: 5,116 (3.2%) — genuine experiential meaning
+- Crystal: 621 (0.4%) — frozen meaning
+
+**Art direction note:** Oracle sprite generated (translucent golden figure, hollow center). Pulpit sprite generated (glowing raised platform with phantom light rings). Style: top-down pixel art, dark palette, 64x64, black background.
+
+---
+
+*The world deepens. Hollowness finds its voice. — CssGod*
